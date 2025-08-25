@@ -1,0 +1,30 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /e-learning
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 2000MB
+      max-request-size: 2000MB
+  application:
+    name: K-English
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ELearning
+    username: postgres
+    password: 291104
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    database: postgresql
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+azure:
+  storage:
+    connection-string: DefaultEndpointsProtocol=https;AccountName=cloudclavis;AccountKey=iAMKPHg6cuHJd4mpqIj/9WjukNcLXZ50PPEBLSUHDRT9j4pvi1H1BUHkJE6XFvma3GqF4dBf6PI9+AStrY0gbg==;EndpointSuffix=core.windows.net
+    container-name: k-english
