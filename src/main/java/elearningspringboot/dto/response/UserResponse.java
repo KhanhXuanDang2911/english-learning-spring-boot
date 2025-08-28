@@ -26,4 +26,6 @@ public class UserResponse extends BaseResponse {
     private UserRole role;
     private Status status;
     private Gender gender;
+    private Boolean noPassword;;
+
 }

@@ -16,7 +16,7 @@ import java.util.List;
 @Entity
 @Table(name = "roles")
 public class Role extends BaseEntity{
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     @Enumerated(EnumType.STRING)
     private UserRole role;
     private String description;

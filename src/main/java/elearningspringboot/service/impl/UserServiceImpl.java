@@ -18,6 +18,7 @@ import elearningspringboot.util.AppUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final RoleService roleService;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserResponse createUser(AdminUserRequest request) {
@@ -47,8 +49,8 @@ public class UserServiceImpl implements UserService {
         user.setGender(Gender.getGenderFromName(request.getGender()));
         user.setRole(role);
         user.setStatus(Status.getStatusFromName(request.getStatus()));
-        // user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setPassword(request.getPassword());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setNoPassword(false);
 
         userRepository.save(user);
         log.info("User created successfully with ID: {}", user.getId());
@@ -71,8 +73,8 @@ public class UserServiceImpl implements UserService {
         user.setRole(role);
         user.setStatus(Status.ACTIVE);
         user.setGender(Gender.getGenderFromName(request.getGender()));
-        // user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setPassword(request.getPassword());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setNoPassword(false);
 
         userRepository.save(user);
         log.info("User registered successfully with ID: {}", user.getId());
@@ -142,8 +144,7 @@ public class UserServiceImpl implements UserService {
         user.setStatus(Status.getStatusFromName(request.getStatus()));
 
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            // user.setPassword(passwordEncoder.encode(request.getPassword()));
-            user.setPassword(request.getPassword());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
             log.debug("Password updated for user ID: {}", id);
         }
 
@@ -181,6 +182,19 @@ public class UserServiceImpl implements UserService {
         userRepository.delete(user);
 
         log.info("User deleted successfully with ID: {}", id);
+    }
+
+
+    public User findUserByEmail(String email) {
+        log.debug("Looking up user by email {}", email);
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> {
+                    log.error("User with email {} not found", email);
+                    return new ResourceNotFoundException(
+                            String.format("User with email = %s not found", email)
+                    );
+                });
     }
 
     private User findUserById(Long id) {

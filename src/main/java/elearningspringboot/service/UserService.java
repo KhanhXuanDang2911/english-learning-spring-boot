@@ -4,6 +4,7 @@ import elearningspringboot.dto.request.AdminUserRequest;
 import elearningspringboot.dto.request.UserRequest;
 import elearningspringboot.dto.response.PageResponse;
 import elearningspringboot.dto.response.UserResponse;
+import elearningspringboot.entity.User;
 
 import java.util.List;
 
@@ -14,6 +15,8 @@ public interface UserService {
     UserResponse registerUser(UserRequest request);
 
     UserResponse getUserById(Long id);
+
+    User findUserByEmail(String email);
 
     PageResponse<List<UserResponse>> getUsersWithPaginationAndKeyword(int pageNumber, int pageSize, List<String> sorts, String keyword);
 

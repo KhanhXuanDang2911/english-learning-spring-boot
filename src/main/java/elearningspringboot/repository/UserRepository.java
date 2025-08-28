@@ -17,11 +17,20 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
+    @Query("""
+             select distinct u from User u
+             join fetch u.role r
+             left join fetch r.roleHasPermissions rp
+             left join fetch rp.permission
+             where u.email = :email
+            """)
+    Optional<User> findByEmailWithPermissions(@Param("email") String email);
+
     boolean existsByEmail(String email);
 
-    @Query("SELECT u FROM User u WHERE u.status = :status AND u.role.role = :role")
+    @Query("select u from User u where u.status = :status and u.role.role = :role")
     List<User> findByStatusAndRole(@Param("status") Status status, @Param("role") String role);
 
-    @Query("SELECT u FROM User u WHERE lower(u.fullName) LIKE %:keyword% OR lower(u.email) LIKE %:keyword%")
+    @Query("select u from User u where lower(u.fullName) like %:keyword% OR lower(u.email) like %:keyword%")
     Page<User> searchUsers(@Param("keyword") String keyword, Pageable pageable);
 }

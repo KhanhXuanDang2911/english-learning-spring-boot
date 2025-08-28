@@ -2,10 +2,15 @@ package elearningspringboot.exception;
 
 import com.azure.core.exception.ResourceNotFoundException;
 import elearningspringboot.dto.response.ErrorResponse;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -83,10 +88,33 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, e.getMessage(), request, null);
     }
 
+    @ExceptionHandler({ExpiredJwtException.class, SignatureException.class, MalformedJwtException.class })
+    public ResponseEntity<ErrorResponse> handleJwtException(RuntimeException e, WebRequest request){
+        String message = "Invalid token";
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, message, request, null);
+    }
+    @ExceptionHandler({BadCredentialsException.class, DisabledException.class, UnauthorizedException.class})
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(RuntimeException e, WebRequest request){
+        HttpStatus status;
+        String message;
+        if (e instanceof BadCredentialsException){
+            status = HttpStatus.UNAUTHORIZED;
+            message = "Invalid email or password";
+        } else if (e instanceof DisabledException) {
+            status = HttpStatus.FORBIDDEN;
+            message = "Account is banned or pending";
+        } else {
+            status = HttpStatus.UNAUTHORIZED;
+            message = e.getMessage();
+        }
+        return buildErrorResponse(status, message, request, null);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleInternalError(Exception e, WebRequest request) {
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage(), request, null);
     }
+
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResponse> handleAppError(AppException e, WebRequest request) {

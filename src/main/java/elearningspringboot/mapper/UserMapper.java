@@ -20,7 +20,7 @@ public interface UserMapper {
     @Mapping(target = "gender", ignore = true)
     User fromAdminUserRequestToEntity(AdminUserRequest request);
 
-    @Mapping(target = "noPassword", ignore = true)
+    @Mapping(target = "noPassword", expression = "java(false)")
     @Mapping(target = "role", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "gender", ignore = true)
