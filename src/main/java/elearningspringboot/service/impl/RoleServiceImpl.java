@@ -146,11 +146,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public Role findRoleByRoleName(String roleName) {
         log.debug("Looking up role by roleName = {}", roleName);
-
         UserRole userRole = UserRole.getRoleFromName(roleName);
-        if (userRole.equals(UserRole.ADMIN)){
-            log.info("=========HELLO WORLD===========");
-        }
         return roleRepository.findByRole(userRole)
                 .orElseThrow(() -> {
                     log.error("Role with role name = {} not found", userRole.getName());
@@ -159,4 +155,5 @@ public class RoleServiceImpl implements RoleService {
                     );
                 });
     }
+
 }

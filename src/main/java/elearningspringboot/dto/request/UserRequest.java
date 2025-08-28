@@ -3,6 +3,7 @@ package elearningspringboot.dto.request;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import elearningspringboot.enumeration.Gender;
 import elearningspringboot.validation.OnCreate;
+import elearningspringboot.validation.OnUpdate;
 import elearningspringboot.validation.ValueOfEnum;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
@@ -16,7 +17,7 @@ public class UserRequest {
     @NotBlank(message = "FullName must be not blank")
     @Size(min = 3, max = 160, message = "FullName must be between 3 and 160 characters")
     private String fullName;
-    @NotBlank(message = "Email must be not blank")
+    @NotBlank(message = "Email must be not blank", groups = OnCreate.class)
     @Pattern(
             regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$",
             message = "Email invalid format"

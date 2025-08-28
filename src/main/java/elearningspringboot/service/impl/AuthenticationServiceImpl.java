@@ -1,6 +1,7 @@
 package elearningspringboot.service.impl;
 
 import elearningspringboot.dto.request.SignInRequest;
+import elearningspringboot.dto.request.UserRequest;
 import elearningspringboot.dto.response.SignInResponse;
 import elearningspringboot.dto.response.TokenResponse;
 import elearningspringboot.entity.User;
@@ -33,6 +34,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserDetailsService userDetailsService;
     private final WhitelistTokenService whitelistTokenService;
 
+
+
+    @Override
     public TokenResponse signIn(SignInRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -59,7 +63,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .build())
                 .build();
     }
-
+    @Override
     public TokenResponse refreshToken(String refreshToken){
         if (StringUtils.isBlank(refreshToken))
             throw new UnauthorizedException("Refresh token is not valid");
@@ -76,6 +80,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .build();
     }
 
+    @Override
     public void logout(String accessToken, String refreshToken) {
         if (StringUtils.isNotBlank(accessToken)) {
             whitelistTokenService.deleteByToken(accessToken);

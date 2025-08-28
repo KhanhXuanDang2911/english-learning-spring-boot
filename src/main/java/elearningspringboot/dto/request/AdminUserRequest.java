@@ -8,6 +8,8 @@ import elearningspringboot.validation.OnCreate;
 import elearningspringboot.validation.OnUpdate;
 import elearningspringboot.validation.ValueOfEnum;
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,6 +17,7 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
+@Builder
 public class AdminUserRequest {
     @NotBlank(message = "FullName must be not blank")
     @Size(min = 3, max = 160, message = "FullName must be between 3 and 160 characters")

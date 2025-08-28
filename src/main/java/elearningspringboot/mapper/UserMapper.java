@@ -14,7 +14,6 @@ import java.util.List;
 public interface UserMapper {
 
 
-    @Mapping(target = "noPassword", expression = "java(false)")
     @Mapping(target = "role", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "gender", ignore = true)
@@ -37,6 +36,7 @@ public interface UserMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromAdminUserDTO(AdminUserRequest request, @MappingTarget User entity);
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "email", ignore = true)
     @Mapping(target = "gender", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromUserDTO(UserRequest request, @MappingTarget User entity);

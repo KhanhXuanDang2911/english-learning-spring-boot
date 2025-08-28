@@ -71,7 +71,7 @@ public class UserServiceImpl implements UserService {
         User user = userMapper.fromUserRequestToEntity(request);
         Role role = roleService.findRoleByRoleName("USER");
         user.setRole(role);
-        user.setStatus(Status.ACTIVE);
+        user.setStatus(Status.PENDING);
         user.setGender(Gender.getGenderFromName(request.getGender()));
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setNoPassword(false);
@@ -158,13 +158,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse updateProfile(Long id, UserRequest request) {
         log.info("Updating profile for user ID: {}", id);
-
         User user = findUserById(id);
-        if (!user.getEmail().equals(request.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
-            log.error("Cannot update profile. Email '{}' already exists", request.getEmail());
-            throw new ResourceConflictException("Email already exists: " + request.getEmail());
-        }
-
         userMapper.updateEntityFromUserDTO(request, user);
         userRepository.save(user);
 
