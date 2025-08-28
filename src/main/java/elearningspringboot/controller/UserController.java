@@ -5,13 +5,19 @@ import elearningspringboot.dto.request.UserRequest;
 import elearningspringboot.dto.response.PageResponse;
 import elearningspringboot.dto.response.ResponseData;
 import elearningspringboot.dto.response.UserResponse;
+import elearningspringboot.entity.User;
 import elearningspringboot.service.UserService;
 import elearningspringboot.util.ResponseBuilder;
+import elearningspringboot.validation.OnCreate;
+import elearningspringboot.validation.OnUpdate;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,7 +55,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<ResponseData<UserResponse>> createUser(@RequestBody @Validated AdminUserRequest request) {
+    public ResponseEntity<ResponseData<UserResponse>> createUser(@RequestBody @Validated(OnCreate.class) AdminUserRequest request) {
         log.info("Request: Admin create user with data = {}", request);
         UserResponse response = userService.createUser(request);
         log.info("Response: User created = {}", response);
@@ -59,7 +65,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<ResponseData<UserResponse>> updateUser(
             @PathVariable("id") @Min(value = 1, message = "Id must be greater than 0") Long id,
-            @RequestBody @Validated AdminUserRequest request) {
+            @RequestBody @Validated(OnUpdate.class) AdminUserRequest request) {
         log.info("Request: Update user with ID = {}, data = {}", id, request);
         UserResponse response = userService.updateUser(id, request);
         log.info("Response: User updated = {}", response);
@@ -75,21 +81,18 @@ public class UserController {
         return ResponseBuilder.noData(HttpStatus.OK, "User deleted successfully");
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<ResponseData<UserResponse>> registerUser(@RequestBody @Validated UserRequest request) {
-        log.info("Request: User register with data = {}", request);
-        UserResponse response = userService.registerUser(request);
-        log.info("Response: User registered = {}", response);
-        return ResponseBuilder.withData(HttpStatus.CREATED, "User registered successfully", response);
-    }
-
     @PutMapping("/me")
     public ResponseEntity<ResponseData<UserResponse>> updateProfile(
-            @RequestParam @Min(value = 1, message = "Id must be greater than 0") Long id,
-            @RequestBody @Validated UserRequest request) {
-        log.info("Request: Update profile for user ID = {}, data = {}", id, request);
-        UserResponse response = userService.updateProfile(id, request);
+            @RequestBody @Validated(OnUpdate.class) UserRequest request) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User userDetails = (User) authentication.getPrincipal();
+        Long userId = userDetails.getId();
+
+        log.info("Request: Update profile for user ID = {}, data = {}", userId, request);
+        UserResponse response = userService.updateProfile(userId, request);
         log.info("Response: Profile updated = {}", response);
+
         return ResponseBuilder.withData(HttpStatus.OK, "Profile updated successfully", response);
     }
 
