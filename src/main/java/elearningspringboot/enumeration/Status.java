@@ -4,6 +4,7 @@ import elearningspringboot.exception.AppException;
 
 public enum Status {
     ACTIVE("ACTIVE"),
+    PENDING("PENDING"),
     BANNED("BANNED");
     private final String name;
 

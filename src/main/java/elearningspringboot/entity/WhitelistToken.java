@@ -1,0 +1,32 @@
+package elearningspringboot.entity;
+
+import elearningspringboot.enumeration.TokenType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.*;
+
+import java.util.Date;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Entity
+@Table(
+        name="whitelist_token",
+        indexes = {
+                @Index(name = "idx_whitelist_token_email", columnList = "email"),
+                @Index(name = "idx_whitelist_token_expiredTime", columnList = "expiredTime")
+        }
+)
+public class WhitelistToken extends BaseEntity{
+    @Column(nullable = false)
+    private String email;
+    @Column(unique = true, nullable = false)
+    private String token;
+    private TokenType tokenType;
+    private Date expiredTime;
+}
