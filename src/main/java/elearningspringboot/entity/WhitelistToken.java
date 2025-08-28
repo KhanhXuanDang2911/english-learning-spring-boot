@@ -7,6 +7,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Getter
@@ -28,5 +29,5 @@ public class WhitelistToken extends BaseEntity{
     @Column(unique = true, nullable = false)
     private String token;
     private TokenType tokenType;
-    private Date expiredTime;
+    private LocalDateTime expiredTime;
 }

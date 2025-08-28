@@ -74,6 +74,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new UnauthorizedException("Refresh token is not valid");
         String newAccessToken = jwtService.generateAccessToken(user);
 
+        whitelistTokenService.createToken(newAccessToken, TokenType.ACCESS_TOKEN, email);
+
         return TokenResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(refreshToken)

@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 @Service
@@ -22,10 +24,14 @@ public class WhiteListTokenServiceImpl implements WhitelistTokenService {
     @Override
     public void createToken(String token, TokenType tokenType, String email){
         Date expiredTime = jwtService.extractExpiration(token, tokenType);
+        LocalDateTime localDateTime = expiredTime.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+
         WhitelistToken blacklistToken = WhitelistToken.builder()
                 .token(token)
                 .email(email)
-                .expiredTime(expiredTime)
+                .expiredTime(localDateTime)
                 .tokenType(tokenType)
                 .build();
         blacklistTokenRepository.save(blacklistToken);
