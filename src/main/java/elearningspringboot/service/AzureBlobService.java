@@ -1,0 +1,8 @@
+package elearningspringboot.service;
+
+import org.springframework.web.multipart.MultipartFile;
+
+public interface AzureBlobService {
+    String uploadFile(MultipartFile file);
+    boolean deleteFile(String fileName);
+}

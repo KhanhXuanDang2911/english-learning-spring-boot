@@ -11,15 +11,18 @@ import elearningspringboot.util.ResponseBuilder;
 import elearningspringboot.validation.OnCreate;
 import elearningspringboot.validation.OnUpdate;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -54,20 +57,27 @@ public class UserController {
         return ResponseBuilder.withData(HttpStatus.OK, "Get user successfully", response);
     }
 
-    @PostMapping
-    public ResponseEntity<ResponseData<UserResponse>> createUser(@RequestBody @Validated(OnCreate.class) AdminUserRequest request) {
+
+    @PostMapping(
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseData<UserResponse>> createUser(@RequestPart(value = "avatar", required = false) MultipartFile avatar,
+                                                                 @RequestPart("user") @Validated({OnCreate.class, Default.class}) AdminUserRequest request) {
         log.info("Request: Admin create user with data = {}", request);
-        UserResponse response = userService.createUser(request);
+        UserResponse response = userService.createUser(avatar, request);
         log.info("Response: User created = {}", response);
         return ResponseBuilder.withData(HttpStatus.CREATED, "User created successfully", response);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}",
+                consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+                produces = MediaType.APPLICATION_JSON_VALUE
+    )
     public ResponseEntity<ResponseData<UserResponse>> updateUser(
             @PathVariable("id") @Min(value = 1, message = "Id must be greater than 0") Long id,
-            @RequestBody @Validated(OnUpdate.class) AdminUserRequest request) {
+            @RequestPart(value = "avatar", required = false) MultipartFile avatar, @RequestPart("user") @Validated({OnUpdate.class, Default.class}) AdminUserRequest request) {
         log.info("Request: Update user with ID = {}, data = {}", id, request);
-        UserResponse response = userService.updateUser(id, request);
+        UserResponse response = userService.updateUser(id, avatar, request);
         log.info("Response: User updated = {}", response);
         return ResponseBuilder.withData(HttpStatus.OK, "User updated successfully", response);
     }
@@ -95,5 +105,7 @@ public class UserController {
 
         return ResponseBuilder.withData(HttpStatus.OK, "Profile updated successfully", response);
     }
+
+
 
 }

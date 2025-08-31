@@ -80,6 +80,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException e, WebRequest request){
+        System.out.println("RESOURCE NOT FOUND");
         return buildErrorResponse(HttpStatus.NOT_FOUND, e.getMessage(), request, null);
     }
 
@@ -88,11 +89,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, e.getMessage(), request, null);
     }
 
-    @ExceptionHandler({ExpiredJwtException.class, SignatureException.class, MalformedJwtException.class })
-    public ResponseEntity<ErrorResponse> handleJwtException(RuntimeException e, WebRequest request){
-        String message = "Invalid token";
-        return buildErrorResponse(HttpStatus.UNAUTHORIZED, message, request, null);
-    }
     @ExceptionHandler({BadCredentialsException.class, DisabledException.class, UnauthorizedException.class})
     public ResponseEntity<ErrorResponse> handleAuthenticationException(RuntimeException e, WebRequest request){
         HttpStatus status;

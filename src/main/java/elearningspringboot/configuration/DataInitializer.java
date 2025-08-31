@@ -14,6 +14,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 @Component
 @RequiredArgsConstructor
@@ -36,14 +39,13 @@ public class DataInitializer implements CommandLineRunner {
                     .email("admin@example.com")
                     .phoneNumber("0912345678")
                     .password("Admin@123")
-                    .avatarUrl(null)
                     .address("System Address")
-                    .birthDate(LocalDate.of(1990, 1, 1))
+                    .birthDate(LocalDate.of(2000, 1, 1))
                     .role(UserRole.ADMIN.name())
                     .status(Status.ACTIVE.name())
                     .gender(Gender.MALE.name())
                     .build();
-            userService.createUser(admin);
+            userService.createUser(null, admin);
         }
     }
 

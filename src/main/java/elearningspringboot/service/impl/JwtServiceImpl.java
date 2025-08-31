@@ -3,13 +3,12 @@ package elearningspringboot.service.impl;
 import elearningspringboot.entity.User;
 import elearningspringboot.enumeration.TokenType;
 import elearningspringboot.service.JwtService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -78,11 +77,19 @@ public class JwtServiceImpl implements JwtService {
     }
 
     public Claims extractAllClaims(String token, TokenType tokenType) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getKey(tokenType))
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getKey(tokenType))
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException e) {
+            throw new BadCredentialsException("Token has expired", e);
+        } catch (MalformedJwtException e) {
+            throw new BadCredentialsException("Invalid token format", e);
+        } catch (SignatureException e) {
+            throw new BadCredentialsException("Invalid token signature", e);
+        }
     }
 
     public String extractEmail(String token, TokenType tokenType) {
