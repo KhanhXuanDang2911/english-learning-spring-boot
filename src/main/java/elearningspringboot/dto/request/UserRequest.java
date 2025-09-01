@@ -3,13 +3,14 @@ package elearningspringboot.dto.request;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import elearningspringboot.enumeration.Gender;
 import elearningspringboot.validation.OnCreate;
-import elearningspringboot.validation.OnUpdate;
 import elearningspringboot.validation.ValueOfEnum;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
+import java.util.Date;
 
 @Getter
 @Setter
@@ -19,8 +20,8 @@ public class UserRequest {
     private String fullName;
     @NotBlank(message = "Email must be not blank", groups = OnCreate.class)
     @Pattern(
-            regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$",
-            message = "Email invalid format"
+            regexp = "^[a-zA-Z0-9](?:[a-zA-Z0-9._%+-]{0,63}[a-zA-Z0-9])?@[a-zA-Z0-9](?:[a-zA-Z0-9.-]{0,253}[a-zA-Z0-9])?\\.[a-zA-Z]{2,}$",
+            message = "Invalid email format"
     )
     private String email;
     @NotBlank(message = "Phone number must be not blank")
@@ -34,8 +35,9 @@ public class UserRequest {
     private String password;
     private String avatarUrl;
     private String address;
-    @NotNull(message = "birthday is required")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    @NotNull(message = "Birthdate is required")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    @JsonFormat(pattern = "dd/MM/yyyy")
     @PastOrPresent(message = "Birth date must be in the past or present")
     private LocalDate birthDate;
     @NotNull(message = "Gender must be not null", groups = OnCreate.class)

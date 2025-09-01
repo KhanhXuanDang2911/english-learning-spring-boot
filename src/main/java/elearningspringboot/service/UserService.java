@@ -5,12 +5,13 @@ import elearningspringboot.dto.request.UserRequest;
 import elearningspringboot.dto.response.PageResponse;
 import elearningspringboot.dto.response.UserResponse;
 import elearningspringboot.entity.User;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 public interface UserService {
 
-    UserResponse createUser(AdminUserRequest request);
+    UserResponse createUser(MultipartFile avatar, AdminUserRequest request);
 
     UserResponse registerUser(UserRequest request);
 
@@ -20,7 +21,7 @@ public interface UserService {
 
     PageResponse<List<UserResponse>> getUsersWithPaginationAndKeyword(int pageNumber, int pageSize, List<String> sorts, String keyword);
 
-    UserResponse updateUser(Long id, AdminUserRequest request);
+    UserResponse updateUser(Long id, MultipartFile avatar, AdminUserRequest request);
 
     UserResponse updateProfile(Long id, UserRequest request);
 

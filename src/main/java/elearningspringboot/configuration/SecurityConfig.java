@@ -33,9 +33,10 @@ public class SecurityConfig {
 
     private final PasswordEncoder passwordEncoder;
     private final UserDetailsService userDetailsService;
-    private final JwtAuthenticationFilter preFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final ExceptionHandlingFilter exceptionHandlingFilter;
     private final String[] WHITE_LIST = {"api/v1/auth/**"};
 
     @Bean
@@ -47,7 +48,8 @@ public class SecurityConfig {
                 .authenticationProvider(provider())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler))
-                .addFilterBefore(preFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(exceptionHandlingFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
