@@ -25,5 +25,7 @@ public interface UserService {
 
     UserResponse updateProfile(Long id, UserRequest request);
 
+    UserResponse updateAvatar(Long id, MultipartFile avatar);
+
     void deleteUser(Long id);
 }

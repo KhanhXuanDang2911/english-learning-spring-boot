@@ -33,7 +33,6 @@ public class UserRequest {
     @NotBlank(message = "Password must be not blank", groups = OnCreate.class)
     @Size(min = 8, max = 160, message = "password must be between 8 and 160 characters")
     private String password;
-    private String avatarUrl;
     private String address;
     @NotNull(message = "Birthdate is required")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

@@ -187,6 +187,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserResponse updateAvatar(Long id, MultipartFile avatar) {
+        log.info("Updating avatar for user ID: {}", id);
+        User user = findUserById(id);
+        String avatarUrl = azureBlobService.uploadFile(avatar);
+        user.setAvatarUrl(avatarUrl);
+        userRepository.save(user);
+        log.info("Avatar updated successfully for user ID: {}", id);
+        UserResponse userResponse = userMapper.toDTO(user);
+        userResponse.setRole(user.getRole().getRole());
+        return userResponse;
+    }
+
+    @Override
     public void deleteUser(Long id) {
         log.info("Deleting user with ID: {}", id);
 
