@@ -1,9 +1,14 @@
 package elearningspringboot.util;
 
 import com.github.slugify.Slugify;
+import elearningspringboot.entity.User;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,5 +46,12 @@ public class AppUtils {
         else
             pageable = PageRequest.of(pageNumber - 1, pageSize, Sort.by(orders));
         return pageable;
+    }
+
+    public static Long getUserIdFromSecurityContext(){
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        Authentication authentication = securityContext.getAuthentication();
+        User user = (User) authentication.getPrincipal();
+        return user.getId();
     }
 }

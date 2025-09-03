@@ -10,6 +10,7 @@ import elearningspringboot.service.UserService;
 import elearningspringboot.util.ResponseBuilder;
 import elearningspringboot.validation.OnCreate;
 import elearningspringboot.validation.OnUpdate;
+import elearningspringboot.validation.ValidImageFile;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +20,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+
+import static elearningspringboot.util.AppUtils.getUserIdFromSecurityContext;
 
 @Slf4j
 @RestController
@@ -61,7 +63,7 @@ public class UserController {
     @PostMapping(
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseData<UserResponse>> createUser(@RequestPart(value = "avatar", required = false) MultipartFile avatar,
+    public ResponseEntity<ResponseData<UserResponse>> createUser(@ValidImageFile @RequestPart(value = "avatar", required = false) MultipartFile avatar,
                                                                  @RequestPart("user") @Validated({OnCreate.class, Default.class}) AdminUserRequest request) {
         log.info("Request: Admin create user with data = {}", request);
         UserResponse response = userService.createUser(avatar, request);
@@ -75,7 +77,7 @@ public class UserController {
     )
     public ResponseEntity<ResponseData<UserResponse>> updateUser(
             @PathVariable("id") @Min(value = 1, message = "Id must be greater than 0") Long id,
-            @RequestPart(value = "avatar", required = false) MultipartFile avatar, @RequestPart("user") @Validated({OnUpdate.class, Default.class}) AdminUserRequest request) {
+            @ValidImageFile @RequestPart(value = "avatar", required = false) MultipartFile avatar, @RequestPart("user") @Validated({OnUpdate.class, Default.class}) AdminUserRequest request) {
         log.info("Request: Update user with ID = {}, data = {}", id, request);
         UserResponse response = userService.updateUser(id, avatar, request);
         log.info("Response: User updated = {}", response);
@@ -93,11 +95,8 @@ public class UserController {
 
     @PutMapping("/me")
     public ResponseEntity<ResponseData<UserResponse>> updateProfile(
-            @RequestBody @Validated(OnUpdate.class) UserRequest request) {
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User userDetails = (User) authentication.getPrincipal();
-        Long userId = userDetails.getId();
+            @RequestBody @Validated({OnUpdate.class, Default.class}) UserRequest request) {
+        Long userId = getUserIdFromSecurityContext();
 
         log.info("Request: Update profile for user ID = {}, data = {}", userId, request);
         UserResponse response = userService.updateProfile(userId, request);
@@ -105,7 +104,17 @@ public class UserController {
 
         return ResponseBuilder.withData(HttpStatus.OK, "Profile updated successfully", response);
     }
+    @PatchMapping(value = "/me/avatar",
+                consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+                produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<ResponseData<UserResponse>> updateAvatar(@ValidImageFile @RequestParam("avatar") MultipartFile avatar) {
+        Long userId = getUserIdFromSecurityContext();
+        log.info("Request: Update avatar for user ID = {}", userId);
+        UserResponse response = userService.updateAvatar(userId, avatar);
+        log.info("Response: Avatar updated");
 
-
+        return ResponseBuilder.withData(HttpStatus.OK, "Avatar user updated successfully", response);
+    }
 
 }
