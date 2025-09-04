@@ -5,7 +5,6 @@ import elearningspringboot.dto.request.UserRequest;
 import elearningspringboot.dto.response.PageResponse;
 import elearningspringboot.dto.response.ResponseData;
 import elearningspringboot.dto.response.UserResponse;
-import elearningspringboot.entity.User;
 import elearningspringboot.service.UserService;
 import elearningspringboot.util.ResponseBuilder;
 import elearningspringboot.validation.OnCreate;
@@ -18,8 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,6 +35,7 @@ public class UserController {
 
     private final UserService userService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<ResponseData<PageResponse<List<UserResponse>>>> getAllUsers(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "Page number must be >= 1") int pageNumber,
@@ -50,6 +49,7 @@ public class UserController {
         return ResponseBuilder.withData(HttpStatus.OK, "Get list users successfully", response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseData<UserResponse>> getUserById(
             @PathVariable("id") @Min(value = 1, message = "Id must be greater than 0") Long id) {
@@ -59,7 +59,7 @@ public class UserController {
         return ResponseBuilder.withData(HttpStatus.OK, "Get user successfully", response);
     }
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
@@ -71,6 +71,7 @@ public class UserController {
         return ResponseBuilder.withData(HttpStatus.CREATED, "User created successfully", response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/{id}",
                 consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
                 produces = MediaType.APPLICATION_JSON_VALUE
@@ -84,6 +85,7 @@ public class UserController {
         return ResponseBuilder.withData(HttpStatus.OK, "User updated successfully", response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseData<Void>> deleteUser(
             @PathVariable("id") @Min(value = 1, message = "Id must be greater than 0") Long id) {
@@ -91,6 +93,13 @@ public class UserController {
         userService.deleteUser(id);
         log.info("Response: User deleted with ID = {}", id);
         return ResponseBuilder.noData(HttpStatus.OK, "User deleted successfully");
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ResponseData<UserResponse>> getProfile() {
+        Long userId = getUserIdFromSecurityContext();
+        UserResponse response = userService.getUserById(userId);
+        return ResponseBuilder.withData(HttpStatus.OK, "Get profile successfully", response);
     }
 
     @PutMapping("/me")
