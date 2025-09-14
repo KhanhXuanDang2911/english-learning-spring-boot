@@ -1,44 +1,46 @@
 package elearningspringboot.service.impl;
 
-import elearningspringboot.entity.User;
 import elearningspringboot.enumeration.TokenType;
+import elearningspringboot.exception.UnauthorizedException;
 import elearningspringboot.service.JwtService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
-import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
 
-    @Value("${jwt.secretKey}")
+    private final MessageSource messageSource;
+
+    @Value("${jwt.secret-key}")
     private String SECRET_KEY;
 
-    @Value("${jwt.refreshKey}")
+    @Value("${jwt.refresh-key}")
     private String REFRESH_KEY;
 
-    @Value("${jwt.resetKey}")
+    @Value("${jwt.reset-key}")
     private String RESET_KEY;
 
-    @Value("${jwt.confirmKey}")
+    @Value("${jwt.confirm-key}")
     private String CONFIRM_KEY;
 
-    @Value("${jwt.expiryHour}")
+    @Value("${jwt.expiry-hour}")
     private long expiryHour;
 
-    @Value("${jwt.expiryDay}")
+    @Value("${jwt.expiry-day}")
     private long expiryDay;
 
-    @Value("${jwt.expiryMinute}")
+    @Value("${jwt.expiry-minute}")
     private long expiryMinute;
 
     @Value("${spring.application.name}")
@@ -66,12 +68,12 @@ public class JwtServiceImpl implements JwtService {
     }
 
 
-    public String generateToken(UserDetails userDetails, TokenType tokenType) {
+    public String generateToken(UserDetails userDetails, TokenType tokenType, long hour) {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .setIssuer(provider)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * expiryHour))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * hour))
                 .signWith(getKey(tokenType))
                 .compact();
     }
@@ -84,11 +86,14 @@ public class JwtServiceImpl implements JwtService {
                     .parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException e) {
-            throw new BadCredentialsException("Token has expired", e);
+            String message = messageSource.getMessage("auth.token.expired", null, LocaleContextHolder.getLocale());
+            throw new UnauthorizedException(message, e);
         } catch (MalformedJwtException e) {
-            throw new BadCredentialsException("Invalid token format", e);
+            String message = messageSource.getMessage("auth.token.invalid.format", null, LocaleContextHolder.getLocale());
+            throw new UnauthorizedException(message, e);
         } catch (SignatureException e) {
-            throw new BadCredentialsException("Invalid token signature", e);
+            String message = messageSource.getMessage("auth.token.invalid.signature", null, LocaleContextHolder.getLocale());
+            throw new UnauthorizedException(message, e);
         }
     }
 
@@ -102,7 +107,11 @@ public class JwtServiceImpl implements JwtService {
 
     public boolean isTokenValid(String token, UserDetails userDetails, TokenType tokenType) {
         final String email = extractEmail(token, tokenType);
-        return userDetails.isEnabled() && email.equals(userDetails.getUsername()) && !isTokenExpired(extractExpiration(token, tokenType));
+        if (!tokenType.equals(TokenType.CONFIRM_TOKEN))
+            return userDetails.isEnabled() && email.equals(userDetails.getUsername()) && !isTokenExpired(extractExpiration(token, tokenType));
+        else
+            return email.equals(userDetails.getUsername()) && !isTokenExpired(extractExpiration(token, tokenType));
+
     }
 
     private boolean isTokenExpired(Date expiration) {

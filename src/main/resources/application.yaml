@@ -2,6 +2,9 @@ server:
   port: 8080
   servlet:
     context-path: /e-learning
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
 
 spring:
   servlet:
@@ -19,10 +22,25 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     database: postgresql
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate:
         format_sql: true
+  messages:
+    basename: messages
+    encoding: UTF-8
+  mail:
+    from: kenglisheducation@gmail.com
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_USERNAME}
+    password: ${GMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 azure:
   storage:
@@ -30,10 +48,17 @@ azure:
     container-name: ${AZURE_STORAGE_CONTAINER_NAME}
 
 jwt:
-  secretKey: ${JWT_SECRET_KEY}
-  refreshKey: ${JWT_REFRESH_KEY}
-  resetKey: ${JWT_RESET_KEY}
-  confirmKey: ${JWT_CONFIRM_KEY}
-  expiryHour: ${JWT_EXPIRY_HOUR:1}
-  expiryDay: ${JWT_EXPIRY_DAY:3}
-  expiryMinute: ${JWT_EXPIRY_MINUTE:30}
+  secret-key: ${JWT_SECRET_KEY}
+  refresh-key: ${JWT_REFRESH_KEY}
+  reset-key: ${JWT_RESET_KEY}
+  confirm-key: ${JWT_CONFIRM_KEY}
+  expiry-hour: ${JWT_EXPIRY_HOUR:1}
+  expiry-day: ${JWT_EXPIRY_DAY:3}
+  expiry-minute: ${JWT_EXPIRY_MINUTE:30}
+oauth2:
+  google:
+    client-id: ${GOOGLE_CLIENT_ID}
+    client-secret: ${GOOGLE_CLIENT_SECRET}
+    redirect-uri: ${GOOGLE_REDIRECT_URI}
+
+

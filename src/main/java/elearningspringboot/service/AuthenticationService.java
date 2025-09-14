@@ -6,6 +6,7 @@ import elearningspringboot.dto.response.TokenResponse;
 
 public interface AuthenticationService {
     TokenResponse signIn(SignInRequest request);
+    TokenResponse authenticateGoogle(String code);
     TokenResponse refreshToken(String refreshToken);
-    void logout(String accessToken, String refreshToken);
+    void signOut(String accessToken, String refreshToken);
 }

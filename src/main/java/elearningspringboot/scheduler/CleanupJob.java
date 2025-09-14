@@ -21,7 +21,7 @@ public class CleanupJob {
         whitelistTokenRepository.deleteByExpiredToken(LocalDateTime.now());
     }
 
-    @Scheduled(cron = "0 0 12 * * ?")
+    @Scheduled(fixedRate = 1000 * 60 * 60 * 24)
     public void cleanupExpiredPendingUser() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expiredAt = now.minusDays(1);

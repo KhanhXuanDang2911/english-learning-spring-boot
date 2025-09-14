@@ -8,6 +8,8 @@ import elearningspringboot.util.ResponseBuilder;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -23,13 +25,15 @@ import java.util.List;
 public class RoleController {
 
     private final RoleService roleService;
+    private final MessageSource messageSource;
 
     @GetMapping
     public ResponseEntity<ResponseData<List<RoleResponse>>> getAll() {
         log.info("Request: Get all roles");
         List<RoleResponse> response = roleService.getAllRoles();
         log.info("Response: {} roles found", response.size());
-        return ResponseBuilder.withData(HttpStatus.OK, "Get list roles successfully", response);
+        String message = messageSource.getMessage("role.get.list.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
 
     @GetMapping("/{name}")
@@ -37,7 +41,8 @@ public class RoleController {
         log.info("Request: Get role by name = {}", name);
         RoleResponse response = roleService.getRoleByRoleName(name);
         log.info("Response: Found role = {}", response);
-        return ResponseBuilder.withData(HttpStatus.OK, "Get role successfully", response);
+        String message = messageSource.getMessage("role.get.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
 
     @PostMapping
@@ -45,25 +50,28 @@ public class RoleController {
         log.info("Request: Create role with data = {}", request);
         RoleResponse response = roleService.createRole(request);
         log.info("Response: Role created = {}", response);
-        return ResponseBuilder.withData(HttpStatus.CREATED, "Role created successfully", response);
+        String message = messageSource.getMessage("role.create.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.withData(HttpStatus.CREATED, message, response);
     }
 
     @PutMapping
     public ResponseEntity<ResponseData<RoleResponse>> update(
-            @RequestParam @Min(value = 1, message = "Id must be greater than 0") Long id,
+            @RequestParam @Min(value = 1, message = "{validation.id.min}") Long id,
             @RequestBody @Validated RoleRequest request) {
         log.info("Request: Update role with id = {}, data = {}", id, request);
         RoleResponse response = roleService.updateRole(request, id);
         log.info("Response: Role updated = {}", response);
-        return ResponseBuilder.withData(HttpStatus.OK, "Role updated successfully", response);
+        String message = messageSource.getMessage("role.update.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ResponseData<Void>> delete(
-            @PathVariable("id") @Min(value = 1, message = "Id must be greater than 1") Long id) {
+            @PathVariable("id") @Min(value = 1, message = "{validation.id.min.role}") Long id) {
         log.info("Request: Delete role with id = {}", id);
         roleService.deleteRole(id);
         log.info("Response: Role deleted with id = {}", id);
-        return ResponseBuilder.noData(HttpStatus.OK, "Role deleted successfully");
+        String message = messageSource.getMessage("role.delete.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.noData(HttpStatus.OK, message);
     }
 }

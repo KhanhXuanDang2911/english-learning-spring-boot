@@ -1,6 +1,7 @@
 package elearningspringboot.service.impl;
 
 import elearningspringboot.dto.request.AdminUserRequest;
+import elearningspringboot.dto.request.UserCreationPassword;
 import elearningspringboot.dto.request.UserRequest;
 import elearningspringboot.dto.response.PageResponse;
 import elearningspringboot.dto.response.UserResponse;
@@ -8,24 +9,28 @@ import elearningspringboot.entity.Role;
 import elearningspringboot.entity.User;
 import elearningspringboot.enumeration.Gender;
 import elearningspringboot.enumeration.Status;
+import elearningspringboot.enumeration.TokenType;
 import elearningspringboot.exception.ResourceConflictException;
 import elearningspringboot.exception.ResourceNotFoundException;
 import elearningspringboot.mapper.UserMapper;
 import elearningspringboot.repository.UserRepository;
-import elearningspringboot.service.AzureBlobService;
-import elearningspringboot.service.RoleService;
-import elearningspringboot.service.UserService;
+import elearningspringboot.service.*;
 import elearningspringboot.util.AppUtils;
-import elearningspringboot.util.DateTimeUtils;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -38,6 +43,9 @@ public class UserServiceImpl implements UserService {
     private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
     private final AzureBlobService azureBlobService;
+    private final MessageSource messageSource;
+    private final MailService mailService;
+    private final JwtService jwtService;
 
     @Override
     public UserResponse createUser(MultipartFile avatar, AdminUserRequest request) {
@@ -45,7 +53,8 @@ public class UserServiceImpl implements UserService {
 
         if (userRepository.existsByEmail(request.getEmail())) {
             log.error("Cannot create user. Email '{}' already exists", request.getEmail());
-            throw new ResourceConflictException("Email already exists");
+            String message = messageSource.getMessage("user.email.exists", null, LocaleContextHolder.getLocale());
+            throw new ResourceConflictException(message);
         }
 
         User user = userMapper.fromAdminUserRequestToEntity(request);
@@ -69,12 +78,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse registerUser(UserRequest request) {
+    public UserResponse registerUser(UserRequest request) throws MessagingException, UnsupportedEncodingException {
         log.info("Registering new user with email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
             log.error("Cannot register user. Email '{}' already exists", request.getEmail());
-            throw new ResourceConflictException("Email already exists: " + request.getEmail());
+            String message = messageSource.getMessage("user.email.exists.with.email", new Object[]{request.getEmail()}, LocaleContextHolder.getLocale());
+            throw new ResourceConflictException(message);
         }
 
         User user = userMapper.fromUserRequestToEntity(request);
@@ -84,11 +94,15 @@ public class UserServiceImpl implements UserService {
         user.setGender(Gender.getGenderFromName(request.getGender()));
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setNoPassword(false);
-
         userRepository.save(user);
+        mailService.sendConfirmLink(user);
+
         log.info("User registered successfully with ID: {}", user.getId());
         UserResponse userResponse =userMapper.toDTO(user);
         userResponse.setRole(user.getRole().getRole());
+        userResponse.setPermissions(user.getRole().getRoleHasPermissions().stream()
+                .map(rhp -> rhp.getPermission().getName())
+                .collect(Collectors.toList()));
         return userResponse;
     }
 
@@ -102,6 +116,9 @@ public class UserServiceImpl implements UserService {
 
         UserResponse userResponse = userMapper.toDTO(user);
         userResponse.setRole(user.getRole().getRole());
+        userResponse.setPermissions(user.getRole().getRoleHasPermissions().stream()
+                .map(rhp -> rhp.getPermission().getName())
+                .collect(Collectors.toList()));
         return userResponse;
     }
 
@@ -143,7 +160,8 @@ public class UserServiceImpl implements UserService {
         User user = findUserById(id);
         if (!user.getEmail().equals(request.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
             log.error("Cannot update user ID {}. Email '{}' already exists", id, request.getEmail());
-            throw new ResourceConflictException("Email already exists: " + request.getEmail());
+            String message = messageSource.getMessage("user.email.exists.with.email", new Object[]{request.getEmail()}, LocaleContextHolder.getLocale());
+            throw new ResourceConflictException(message);
         }
 
         userMapper.updateEntityFromAdminUserDTO(request, user);
@@ -200,6 +218,40 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Boolean isNoPassword(String email) {
+        if (!userRepository.existsByEmail(email)) {
+            String message = messageSource.getMessage("user.not.found.by.email", new Object[]{email}, LocaleContextHolder.getLocale());
+            throw new ResourceNotFoundException(message);
+        }
+        return userRepository.getStatusPassword(email);
+    }
+
+    @Override
+    public void verifyEmail(String token) {
+        String email = jwtService.extractEmail(token, TokenType.CONFIRM_TOKEN);
+        User user = findUserByEmail(email);
+        if (!user.getStatus().equals(Status.PENDING) || !jwtService.isTokenValid(token, user, TokenType.CONFIRM_TOKEN)) {
+            String message = messageSource.getMessage("user.verifyEmail.failed", null, LocaleContextHolder.getLocale());
+            throw new ResourceConflictException(message);
+        }
+        user.setStatus(Status.ACTIVE);
+        userRepository.save(user);
+    }
+
+    @Override
+    public void createPassword(UserCreationPassword request) {
+        User user = findUserByEmail(request.getEmail());
+        if (StringUtils.isBlank(user.getPassword()) && user.getNoPassword()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setNoPassword(false);
+            userRepository.save(user);
+        } else {
+            String message = messageSource.getMessage("user.password.exists", null, LocaleContextHolder.getLocale());
+            throw new ResourceConflictException(message);
+        }
+    }
+
+    @Override
     public void deleteUser(Long id) {
         log.info("Deleting user with ID: {}", id);
 
@@ -216,9 +268,8 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> {
                     log.error("User with email {} not found", email);
-                    return new ResourceNotFoundException(
-                            String.format("User with email = %s not found", email)
-                    );
+                    String message = messageSource.getMessage("user.not.found.by.email", new Object[]{email}, LocaleContextHolder.getLocale());
+                    return new ResourceNotFoundException(message);
                 });
     }
 
@@ -228,9 +279,8 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("User with ID {} not found", id);
-                    return new ResourceNotFoundException(
-                            String.format("User with id = %s not found", id)
-                    );
+                    String message = messageSource.getMessage("user.not.found.by.id", new Object[]{id}, LocaleContextHolder.getLocale());
+                    return new ResourceNotFoundException(message);
                 });
     }
 }
