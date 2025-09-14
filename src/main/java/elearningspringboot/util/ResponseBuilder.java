@@ -14,6 +14,10 @@ public class ResponseBuilder {
         );
     }
 
+    public static ResponseEntity<Void> noContent() {
+        return ResponseEntity.noContent().build();
+    }
+
     public static <T> ResponseEntity<ResponseData<T>> withData(HttpStatus status, String message, T data){
         return ResponseEntity.status(status).body(
                 ResponseData.<T>builder()

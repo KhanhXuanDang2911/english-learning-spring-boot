@@ -26,7 +26,6 @@ public class User extends BaseEntity implements UserDetails {
     @Column(nullable = false, unique = true)
     private String email;
     private String phoneNumber;
-    @Column(nullable = false)
     private String password;
     private String avatarUrl;
     private String address;
@@ -58,6 +57,6 @@ public class User extends BaseEntity implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return this.status.equals(Status.ACTIVE);
+        return this.status.equals(Status.ACTIVE) || this.status.equals(Status.PENDING);
     }
 }

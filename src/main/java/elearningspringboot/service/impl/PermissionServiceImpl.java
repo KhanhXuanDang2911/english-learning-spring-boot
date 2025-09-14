@@ -12,6 +12,8 @@ import elearningspringboot.service.PermissionService;
 import elearningspringboot.util.AppUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     private final PermissionRepository permissionRepository;
     private final PermissionMapper permissionMapper;
+    private final MessageSource messageSource;
 
     @Override
     public PermissionResponse createPermission(PermissionRequest request) {
@@ -34,9 +37,8 @@ public class PermissionServiceImpl implements PermissionService {
 
         if (permissionRepository.existsByName(request.getName())) {
             log.error("Permission with name '{}' already exists", request.getName());
-            throw new ResourceConflictException(
-                    String.format("Permission with name '%s' already exists", request.getName())
-            );
+            String message = messageSource.getMessage("permission.exists.with.name", new Object[]{request.getName()}, LocaleContextHolder.getLocale());
+            throw new ResourceConflictException(message);
         }
 
         Permission permission = permissionMapper.toEntity(request);
@@ -52,9 +54,8 @@ public class PermissionServiceImpl implements PermissionService {
 
         if (permissionRepository.existsByNameExceptForId(request.getName(), id)) {
             log.error("Permission with name '{}' already exists for another id", request.getName());
-            throw new ResourceConflictException(
-                    String.format("Permission with name '%s' already exists", request.getName())
-            );
+            String message = messageSource.getMessage("permission.exists.with.name", new Object[]{request.getName()}, LocaleContextHolder.getLocale());
+            throw new ResourceConflictException(message);
         }
 
         Permission permission = findPermissionById(id);

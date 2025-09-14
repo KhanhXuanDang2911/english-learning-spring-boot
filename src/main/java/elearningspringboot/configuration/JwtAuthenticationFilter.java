@@ -25,7 +25,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final HandlerExceptionResolver handlerExceptionResolver;
     private final WhitelistTokenService whitelistTokenService;
 
     @Override
@@ -35,7 +34,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ") || authHeader.equals("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }

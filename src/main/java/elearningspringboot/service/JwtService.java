@@ -11,7 +11,7 @@ public interface JwtService {
 
     String generateRefreshToken(UserDetails userDetails);
 
-    String generateToken(UserDetails userDetails, TokenType tokenType);
+    String generateToken(UserDetails userDetails, TokenType tokenType, long hour);
 
     Claims extractAllClaims(String token, TokenType tokenType);
 

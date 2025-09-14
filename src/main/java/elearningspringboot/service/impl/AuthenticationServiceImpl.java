@@ -1,19 +1,30 @@
 package elearningspringboot.service.impl;
 
+import elearningspringboot.dto.request.ExchangeTokenRequest;
 import elearningspringboot.dto.request.SignInRequest;
-import elearningspringboot.dto.request.UserRequest;
+import elearningspringboot.dto.response.ExchangeTokenResponse;
+import elearningspringboot.dto.response.GoogleUserInfoResponse;
 import elearningspringboot.dto.response.SignInResponse;
 import elearningspringboot.dto.response.TokenResponse;
+import elearningspringboot.entity.Role;
 import elearningspringboot.entity.User;
-import elearningspringboot.entity.WhitelistToken;
+import elearningspringboot.enumeration.ErrorCode;
+import elearningspringboot.enumeration.Gender;
+import elearningspringboot.enumeration.Status;
 import elearningspringboot.enumeration.TokenType;
+import elearningspringboot.exception.AppException;
 import elearningspringboot.exception.UnauthorizedException;
-import elearningspringboot.service.AuthenticationService;
-import elearningspringboot.service.WhitelistTokenService;
-import elearningspringboot.service.JwtService;
-import elearningspringboot.service.UserService;
+import elearningspringboot.repository.UserRepository;
+import elearningspringboot.repository.httpclient.GoogleIdentityClient;
+import elearningspringboot.repository.httpclient.GoogleUserInfoClient;
+import elearningspringboot.service.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,6 +37,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final AuthenticationManager authenticationManager;
@@ -33,7 +45,17 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserService userService;
     private final UserDetailsService userDetailsService;
     private final WhitelistTokenService whitelistTokenService;
+    private final GoogleIdentityClient googleIdentityClient;
+    private final GoogleUserInfoClient googleUserInfoClient;
+    private final UserRepository userRepository;
+    private final RoleService roleService;
+    private final MessageSource messageSource;
 
+    @Value("${oauth2.google.client-id}")
+    private String CLIENT_ID;
+
+    @Value("${oauth2.google.client-secret}")
+    private String CLIENT_SECRET;
 
 
     @Override
@@ -42,6 +64,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
         User user = userService.findUserByEmail(request.getEmail());
+        if (user.getStatus().equals(Status.PENDING)) {
+            throw new AppException(ErrorCode.PENDING_ACCOUNT);
+        }
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
 
@@ -57,21 +82,82 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .email(user.getEmail())
                         .avatarUrl(user.getAvatarUrl())
                         .role(user.getRole().getRole())
+                        .noPassword(user.getNoPassword())
                         .permissions(user.getRole().getRoleHasPermissions().stream()
                                 .map(rhp -> rhp.getPermission().getName())
                                 .collect(Collectors.toList()))
                         .build())
                 .build();
     }
+
+    @Override
+    public TokenResponse authenticateGoogle(String code) {
+        String GRANT_TYPE = "authorization_code";
+        String REDIRECT_URI = "postmessage";
+        ExchangeTokenRequest request = ExchangeTokenRequest.builder()
+                .code(code)
+                .redirectUri(REDIRECT_URI)
+                .clientId(CLIENT_ID)
+                .clientSecret(CLIENT_SECRET)
+                .grantType(GRANT_TYPE)
+                .build();
+        ExchangeTokenResponse exchangeTokenResponse = googleIdentityClient.getToken(request);
+        GoogleUserInfoResponse userInfoResponse = googleUserInfoClient.getUserInfo("Bearer " + exchangeTokenResponse.getAccessToken());
+        User userResponse;
+        if (!userRepository.existsByEmail(userInfoResponse.getEmail())){
+            Role role = roleService.findRoleByRoleName("USER");
+            User user = User.builder()
+                    .email(userInfoResponse.getEmail())
+                    .fullName(userInfoResponse.getName())
+                    .avatarUrl(userInfoResponse.getPicture())
+                    .status(Status.ACTIVE)
+                    .role(role)
+                    .gender(Gender.MALE)
+                    .noPassword(true)
+                    .build();
+            userResponse = userRepository.save(user);
+        } else {
+            userResponse = userService.findUserByEmail(userInfoResponse.getEmail());
+            if (userResponse.getStatus().equals(Status.PENDING)){
+                userResponse.setStatus(Status.ACTIVE);
+            }
+        }
+        String accessToken = jwtService.generateAccessToken(userResponse);
+        String refreshToken = jwtService.generateRefreshToken(userResponse);
+
+        whitelistTokenService.createToken(accessToken, TokenType.ACCESS_TOKEN, userInfoResponse.getEmail());
+        whitelistTokenService.createToken(refreshToken, TokenType.REFRESH_TOKEN, userInfoResponse.getEmail());
+
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .user(SignInResponse.builder()
+                        .id(userResponse.getId())
+                        .fullName(userResponse.getFullName())
+                        .email(userResponse.getEmail())
+                        .avatarUrl(userResponse.getAvatarUrl())
+                        .role(userResponse.getRole().getRole())
+                        .noPassword(userResponse.getNoPassword())
+                        .permissions(userResponse.getRole().getRoleHasPermissions().stream()
+                                .map(rhp -> rhp.getPermission().getName())
+                                .collect(Collectors.toList()))
+                        .build())
+                .build();
+    }
+
     @Override
     public TokenResponse refreshToken(String refreshToken){
-        if (StringUtils.isBlank(refreshToken))
-            throw new UnauthorizedException("Refresh token is not valid");
+        if (StringUtils.isBlank(refreshToken)) {
+            String message = messageSource.getMessage("auth.refresh.invalid", null, LocaleContextHolder.getLocale());
+            throw new UnauthorizedException(message);
+        }
         String email = jwtService.extractEmail(refreshToken, TokenType.REFRESH_TOKEN);
 
         UserDetails user = userDetailsService.loadUserByUsername(email);
-        if (!jwtService.isTokenValid(refreshToken, user, TokenType.REFRESH_TOKEN) || !whitelistTokenService.existsByToken(refreshToken))
-            throw new UnauthorizedException("Refresh token is not valid");
+        if (!jwtService.isTokenValid(refreshToken, user, TokenType.REFRESH_TOKEN) || !whitelistTokenService.existsByToken(refreshToken)) {
+            String message = messageSource.getMessage("auth.refresh.invalid", null, LocaleContextHolder.getLocale());
+            throw new UnauthorizedException(message);
+        }
         String newAccessToken = jwtService.generateAccessToken(user);
 
         whitelistTokenService.createToken(newAccessToken, TokenType.ACCESS_TOKEN, email);
@@ -83,7 +169,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     @Override
-    public void logout(String accessToken, String refreshToken) {
+    public void signOut(String accessToken, String refreshToken) {
         if (StringUtils.isNotBlank(accessToken)) {
             whitelistTokenService.deleteByToken(accessToken);
         }
@@ -93,11 +179,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             UserDetails user = userDetailsService.loadUserByUsername(email);
 
             if (!jwtService.isTokenValid(refreshToken, user, TokenType.REFRESH_TOKEN)) {
-                throw new UnauthorizedException("Refresh token is not valid");
+                String message = messageSource.getMessage("auth.refresh.invalid", null, LocaleContextHolder.getLocale());
+                throw new UnauthorizedException(message);
             }
 
             if (!whitelistTokenService.existsByToken(refreshToken)) {
-                throw new UnauthorizedException("Refresh token is not whitelisted");
+                String message = messageSource.getMessage("auth.refresh.not.whitelisted", null, LocaleContextHolder.getLocale());
+                throw new UnauthorizedException(message);
             }
 
             whitelistTokenService.deleteByToken(refreshToken);

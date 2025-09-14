@@ -13,12 +13,12 @@ public class ValueOfEnumValidator implements ConstraintValidator<ValueOfEnum, St
     @Override
     public void initialize(ValueOfEnum annotation) {
         acceptedValues = Arrays.stream(annotation.enumClass().getEnumConstants())
-                .map(Enum::name)
+                .map(e -> e.name().toUpperCase())
                 .collect(Collectors.toSet());
     }
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        return value == null || acceptedValues.contains(value);
+        return value == null || acceptedValues.contains(value.toUpperCase());
     }
 }

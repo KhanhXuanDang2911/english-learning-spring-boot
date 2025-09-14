@@ -4,7 +4,8 @@ import elearningspringboot.exception.AppException;
 
 public enum Gender {
     MALE("MALE"),
-    FEMALE("FEMALE");
+    FEMALE("FEMALE"),
+    OTHER("OTHER");
 
     private final String name;
     Gender(String name){

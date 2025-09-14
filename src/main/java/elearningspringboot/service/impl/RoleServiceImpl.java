@@ -14,6 +14,8 @@ import elearningspringboot.repository.RoleRepository;
 import elearningspringboot.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ public class RoleServiceImpl implements RoleService {
     private final RoleRepository roleRepository;
     private final RoleMapper roleMapper;
     private final PermissionMapper permissionMapper;
+    private final MessageSource messageSource;
 
     @Override
     public RoleResponse createRole(RoleRequest request) {
@@ -36,9 +39,8 @@ public class RoleServiceImpl implements RoleService {
 
         if (roleRepository.existsByRole(UserRole.getRoleFromName(request.getRole()))) {
             log.error("Role with name '{}' already exists", request.getRole());
-            throw new ResourceConflictException(
-                    String.format("Role with name '%s' already exists", request.getRole())
-            );
+            String message = messageSource.getMessage("role.exists.with.name", new Object[]{request.getRole()}, LocaleContextHolder.getLocale());
+            throw new ResourceConflictException(message);
         }
 
         Role role = roleMapper.toEntity(request);
@@ -55,9 +57,8 @@ public class RoleServiceImpl implements RoleService {
 
         if (roleRepository.existsByRoleExceptForId(UserRole.getRoleFromName(request.getRole()), id)) {
             log.error("Role with name '{}' already exists (conflict)", request.getRole());
-            throw new ResourceConflictException(
-                    String.format("Role with name '%s' already exists", request.getRole())
-            );
+            String message = messageSource.getMessage("role.exists.with.name", new Object[]{request.getRole()}, LocaleContextHolder.getLocale());
+            throw new ResourceConflictException(message);
         }
 
         Role role = findRoleById(id);

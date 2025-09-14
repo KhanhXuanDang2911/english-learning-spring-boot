@@ -42,4 +42,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("DELETE FROM User u WHERE u.status = :status AND u.createdAt < :expiredAt")
     void deleteExpiredPendingUsers(@Param("status") Status status,
                                    @Param("expiredAt") LocalDateTime expiredAt);
+
+    @Query("select u.noPassword from User u where u.email = :email")
+    Boolean getStatusPassword(@Param("email") String email);
 }

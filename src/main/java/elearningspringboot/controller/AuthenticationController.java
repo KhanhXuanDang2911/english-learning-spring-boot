@@ -1,21 +1,30 @@
 package elearningspringboot.controller;
 
 import elearningspringboot.dto.request.SignInRequest;
+import elearningspringboot.dto.request.UserCreationPassword;
 import elearningspringboot.dto.request.UserRequest;
 import elearningspringboot.dto.response.ResponseData;
+import elearningspringboot.dto.response.SignInResponse;
 import elearningspringboot.dto.response.TokenResponse;
 import elearningspringboot.dto.response.UserResponse;
 import elearningspringboot.service.AuthenticationService;
 import elearningspringboot.service.UserService;
 import elearningspringboot.util.ResponseBuilder;
 import elearningspringboot.validation.OnCreate;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.UnsupportedEncodingException;
 
 @Slf4j
 @RestController
@@ -26,29 +35,63 @@ public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
     private final UserService userService;
+    private final MessageSource messageSource;
 
     @PostMapping("/sign-in")
     public ResponseEntity<ResponseData<TokenResponse>> signIn(@Validated @RequestBody SignInRequest request){
         TokenResponse response = authenticationService.signIn(request);
-        return ResponseBuilder.withData(HttpStatus.OK, "Sign in successfully", response);
+        String message = messageSource.getMessage("auth.signin.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
     @PostMapping("/refresh-token")
     public ResponseEntity<ResponseData<TokenResponse>> refreshToken(@RequestHeader("Y-Token") String refreshToken){
         TokenResponse response = authenticationService.refreshToken(refreshToken);
-        return ResponseBuilder.withData(HttpStatus.OK, "Refresh token successfully", response);
+        String message = messageSource.getMessage("auth.refresh.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
 
-    @PostMapping("/logout")
+    @PostMapping("/sign-out")
     public ResponseEntity<ResponseData<Void>> refreshToken(@RequestHeader("X-Token") String accessToken, @RequestHeader("Y-Token") String refreshToken){
-        authenticationService.logout(accessToken, refreshToken);
-        return ResponseBuilder.noData(HttpStatus.OK, "Logout successfully");
+        authenticationService.signOut(accessToken, refreshToken);
+        String message = messageSource.getMessage("auth.logout.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.noData(HttpStatus.OK, message);
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<ResponseData<UserResponse>> registerUser(@RequestBody @Validated(OnCreate.class) UserRequest request) {
+    public ResponseEntity<ResponseData<UserResponse>> registerUser(@RequestBody @Validated({OnCreate.class, Default.class}) UserRequest request) throws MessagingException, UnsupportedEncodingException {
         log.info("Request: User register with data = {}", request);
         UserResponse response = userService.registerUser(request);
         log.info("Response: User registered = {}", response);
-        return ResponseBuilder.withData(HttpStatus.CREATED, "User registered successfully", response);
+        String message = messageSource.getMessage("auth.register.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.withData(HttpStatus.CREATED, message, response);
     }
+
+    @PostMapping("/authenticate/google")
+    public ResponseEntity<ResponseData<TokenResponse>> authenticateGoogle(@NotBlank(message = "{validation.code.not.blank}") @RequestHeader("G-Code") String code) {
+        TokenResponse response = authenticationService.authenticateGoogle(code);
+        String message = messageSource.getMessage("auth.google.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.withData(HttpStatus.OK, message, response);
+    }
+
+    @GetMapping(value="/check-no-password/{email}")
+    public ResponseEntity<ResponseData<Boolean>> isNoPassword(@PathVariable("email") String email) {
+        Boolean response = userService.isNoPassword(email);
+        String message = messageSource.getMessage("user.noPassword.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.withData(HttpStatus.OK, message, response);
+    }
+
+    @PostMapping(value ="/create-password")
+    public ResponseEntity<ResponseData<Void>> createPassword(@RequestBody UserCreationPassword request) {
+        userService.createPassword(request);
+        String message = messageSource.getMessage("user.password.create.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.noData(HttpStatus.OK, message);
+    }
+
+    @PostMapping(value="/verify-email")
+    public ResponseEntity<ResponseData<Void>> verifyEmail(@RequestHeader("C-Token") String confirmToken) {
+        userService.verifyEmail(confirmToken);
+        String message = messageSource.getMessage("user.verifyEmail.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.noData(HttpStatus.OK, message);
+    }
+
 }

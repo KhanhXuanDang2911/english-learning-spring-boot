@@ -17,5 +17,6 @@ public class SignInResponse {
     private String email;
     private String avatarUrl;
     private UserRole role;
+    private Boolean noPassword;
     private List<String> permissions;
 }
