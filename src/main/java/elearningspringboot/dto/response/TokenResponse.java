@@ -12,5 +12,5 @@ import lombok.*;
 public class TokenResponse {
     private String accessToken;
     private String refreshToken;
-    private SignInResponse user;
+    private UserResponse user;
 }

@@ -9,6 +9,8 @@ public enum ErrorCode {
     INVALID_STATUS_ENUM(40003, "Invalid name status enum"),
     INVALID_REFRESH_TOKEN(40101, "Invalid refresh token"),
     PENDING_ACCOUNT(40004, "Pending account"),
+    PASSWORD_NOT_MATCH(40005, "Password not match"),
+    ACCOUNT_NOT_ACTIVE(40006, "Account not active"),
     UPLOAD_FILE_FAILED(50001, "Upload file failed");
     private final int code;
     private final String message;

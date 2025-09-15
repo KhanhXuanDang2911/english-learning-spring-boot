@@ -1,8 +1,6 @@
 package elearningspringboot.service;
 
-import elearningspringboot.dto.request.AdminUserRequest;
-import elearningspringboot.dto.request.UserCreationPassword;
-import elearningspringboot.dto.request.UserRequest;
+import elearningspringboot.dto.request.*;
 import elearningspringboot.dto.response.PageResponse;
 import elearningspringboot.dto.response.UserResponse;
 import elearningspringboot.entity.User;
@@ -31,6 +29,12 @@ public interface UserService {
     UserResponse updateAvatar(Long id, MultipartFile avatar);
 
     Boolean isNoPassword(String email);
+
+    void forgotPassword(ForgotPasswordRequest request) throws MessagingException, UnsupportedEncodingException;
+
+    void updatePassword(Long id, UpdatePasswordRequest request);
+
+    void resetPassword(String token, ResetPasswordRequest request);
 
     void verifyEmail(String token);
 

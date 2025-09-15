@@ -1,17 +1,18 @@
 package elearningspringboot.service.impl;
 
-import elearningspringboot.dto.request.AdminUserRequest;
-import elearningspringboot.dto.request.UserCreationPassword;
-import elearningspringboot.dto.request.UserRequest;
+import elearningspringboot.dto.request.*;
 import elearningspringboot.dto.response.PageResponse;
 import elearningspringboot.dto.response.UserResponse;
 import elearningspringboot.entity.Role;
 import elearningspringboot.entity.User;
+import elearningspringboot.enumeration.ErrorCode;
 import elearningspringboot.enumeration.Gender;
 import elearningspringboot.enumeration.Status;
 import elearningspringboot.enumeration.TokenType;
+import elearningspringboot.exception.AppException;
 import elearningspringboot.exception.ResourceConflictException;
 import elearningspringboot.exception.ResourceNotFoundException;
+import elearningspringboot.exception.UnauthorizedException;
 import elearningspringboot.mapper.UserMapper;
 import elearningspringboot.repository.UserRepository;
 import elearningspringboot.service.*;
@@ -46,6 +47,7 @@ public class UserServiceImpl implements UserService {
     private final MessageSource messageSource;
     private final MailService mailService;
     private final JwtService jwtService;
+    private final WhitelistTokenService whitelistTokenService;
 
     @Override
     public UserResponse createUser(MultipartFile avatar, AdminUserRequest request) {
@@ -195,7 +197,7 @@ public class UserServiceImpl implements UserService {
         log.info("Updating profile for user ID: {}", id);
         User user = findUserById(id);
         userMapper.updateEntityFromUserDTO(request, user);
-
+        user.setGender(Gender.getGenderFromName(request.getGender()));
         userRepository.save(user);
 
         log.info("Profile updated successfully for user ID: {}", user.getId());
@@ -208,8 +210,12 @@ public class UserServiceImpl implements UserService {
     public UserResponse updateAvatar(Long id, MultipartFile avatar) {
         log.info("Updating avatar for user ID: {}", id);
         User user = findUserById(id);
-        String avatarUrl = azureBlobService.uploadFile(avatar);
-        user.setAvatarUrl(avatarUrl);
+        if (avatar != null && !avatar.isEmpty()) {
+            log.info("Uploading new avatar for user ID: {}", id);
+            String avatarUrl = azureBlobService.uploadFile(avatar);
+            user.setAvatarUrl(avatarUrl);
+            log.info("Upload new avatar for user ID: {} successfully", id);
+        }
         userRepository.save(user);
         log.info("Avatar updated successfully for user ID: {}", id);
         UserResponse userResponse = userMapper.toDTO(user);
@@ -224,6 +230,25 @@ public class UserServiceImpl implements UserService {
             throw new ResourceNotFoundException(message);
         }
         return userRepository.getStatusPassword(email);
+    }
+
+    @Override
+    public void forgotPassword(ForgotPasswordRequest request) throws MessagingException, UnsupportedEncodingException {
+        User user = findUserByEmail(request.getEmail());
+        if (!user.getStatus().equals(Status.ACTIVE)) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_ACTIVE);
+        }
+        mailService.sendResetLink(user);
+    }
+
+    @Override
+    public void updatePassword(Long id, UpdatePasswordRequest request) {
+        User user = findUserById(id);
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_NOT_MATCH);
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 
     @Override
@@ -252,6 +277,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void resetPassword(String token, ResetPasswordRequest request) {
+        String email = jwtService.extractEmail(token, TokenType.RESET_TOKEN);
+        User user = findUserByEmail(email);
+        if (!jwtService.isTokenValid(token, user, TokenType.RESET_TOKEN) || !whitelistTokenService.existsByToken(token)) {
+            String message = messageSource.getMessage("auth.resetToken.invalid", null, LocaleContextHolder.getLocale());
+            throw new UnauthorizedException(message);
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        whitelistTokenService.deleteByToken(token);
+        userRepository.save(user);
+    }
+
+    @Override
     public void deleteUser(Long id) {
         log.info("Deleting user with ID: {}", id);
 
@@ -263,7 +301,7 @@ public class UserServiceImpl implements UserService {
 
 
     public User findUserByEmail(String email) {
-        log.debug("Looking up user by email {}", email);
+        log.info("Looking up user by email {}", email);
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> {

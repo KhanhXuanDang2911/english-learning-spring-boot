@@ -1,9 +1,9 @@
 package elearningspringboot.exception;
 
-import com.azure.core.exception.ResourceNotFoundException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import elearningspringboot.dto.response.ErrorResponse;
 import elearningspringboot.enumeration.ErrorCode;
+import elearningspringboot.exception.ResourceNotFoundException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -21,7 +21,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
@@ -101,14 +100,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException e, WebRequest request){
-        String message = messageSource.getMessage("error.resource.not.found", null, LocaleContextHolder.getLocale());
-        return buildErrorResponse(HttpStatus.NOT_FOUND, message, request, null);
+        return buildErrorResponse(HttpStatus.NOT_FOUND, e.getMessage(), request, null);
     }
 
     @ExceptionHandler(ResourceConflictException.class)
     public ResponseEntity<ErrorResponse> handleResourceConflict(ResourceConflictException e, WebRequest request){
-        String message = messageSource.getMessage("error.resource.conflict", null, LocaleContextHolder.getLocale());
-        return buildErrorResponse(HttpStatus.CONFLICT, message, request, null);
+        return buildErrorResponse(HttpStatus.CONFLICT, e.getMessage(), request, null);
     }
 
     @ExceptionHandler({BadCredentialsException.class, DisabledException.class, UnauthorizedException.class})
@@ -155,6 +152,7 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleInternalError(Exception e, WebRequest request) {
+        System.out.println("WHAT THE HEO handleInternalError");
         String message = messageSource.getMessage("error.internal.server", null, LocaleContextHolder.getLocale());
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, request, null);
     }
@@ -164,7 +162,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAppError(AppException e, WebRequest request) {
         String messageKey = getMessageKeyForErrorCode(e.getErrorCode());
         String message = messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale());
-        
         return ResponseEntity.status(500).body(
                 ErrorResponse.builder()
                         .timestamp(LocalDateTime.now())
@@ -185,6 +182,8 @@ public class GlobalExceptionHandler {
             case INVALID_REFRESH_TOKEN -> "auth.refresh.invalid";
             case PENDING_ACCOUNT -> "error.pendingAccount";
             case UPLOAD_FILE_FAILED -> "error.upload.failed";
+            case PASSWORD_NOT_MATCH -> "error.password.mismatch";
+            case ACCOUNT_NOT_ACTIVE -> "error.account.notActive";
         };
     }
 
