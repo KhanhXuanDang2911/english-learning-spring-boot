@@ -1,18 +1,16 @@
 package elearningspringboot.controller;
 
-import elearningspringboot.dto.request.SignInRequest;
-import elearningspringboot.dto.request.UserCreationPassword;
-import elearningspringboot.dto.request.UserRequest;
+import elearningspringboot.dto.request.*;
 import elearningspringboot.dto.response.ResponseData;
-import elearningspringboot.dto.response.SignInResponse;
 import elearningspringboot.dto.response.TokenResponse;
 import elearningspringboot.dto.response.UserResponse;
+import elearningspringboot.enumeration.TokenType;
 import elearningspringboot.service.AuthenticationService;
 import elearningspringboot.service.UserService;
 import elearningspringboot.util.ResponseBuilder;
 import elearningspringboot.validation.OnCreate;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +41,7 @@ public class AuthenticationController {
         String message = messageSource.getMessage("auth.signin.success", null, LocaleContextHolder.getLocale());
         return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
+
     @PostMapping("/refresh-token")
     public ResponseEntity<ResponseData<TokenResponse>> refreshToken(@RequestHeader("Y-Token") String refreshToken){
         TokenResponse response = authenticationService.refreshToken(refreshToken);
@@ -91,6 +90,20 @@ public class AuthenticationController {
     public ResponseEntity<ResponseData<Void>> verifyEmail(@RequestHeader("C-Token") String confirmToken) {
         userService.verifyEmail(confirmToken);
         String message = messageSource.getMessage("user.verifyEmail.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.noData(HttpStatus.OK, message);
+    }
+
+    @PostMapping(value="/forgot-password")
+    public ResponseEntity<ResponseData<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) throws MessagingException, UnsupportedEncodingException {
+        userService.forgotPassword(request);
+        String message = messageSource.getMessage("user.forgotPassword.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.noData(HttpStatus.OK, message);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResponseData<Void>> validateResetToken(@RequestHeader("R-Token") String token, @Valid @RequestBody ResetPasswordRequest request) {
+        userService.resetPassword(token, request);
+        String message = messageSource.getMessage("auth.resetPassword.success", null, LocaleContextHolder.getLocale());
         return ResponseBuilder.noData(HttpStatus.OK, message);
     }
 

@@ -1,7 +1,7 @@
 package elearningspringboot.controller;
 
 import elearningspringboot.dto.request.AdminUserRequest;
-import elearningspringboot.dto.request.UserCreationPassword;
+import elearningspringboot.dto.request.UpdatePasswordRequest;
 import elearningspringboot.dto.request.UserRequest;
 import elearningspringboot.dto.response.PageResponse;
 import elearningspringboot.dto.response.ResponseData;
@@ -11,6 +11,7 @@ import elearningspringboot.util.ResponseBuilder;
 import elearningspringboot.validation.OnCreate;
 import elearningspringboot.validation.OnUpdate;
 import elearningspringboot.validation.ValidImageFile;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
@@ -124,6 +125,17 @@ public class UserController {
         String message = messageSource.getMessage("user.profile.update.success", null, LocaleContextHolder.getLocale());
         return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<ResponseData<Void>> changePassword(@Valid @RequestBody UpdatePasswordRequest request ) {
+        Long userId = getUserIdFromSecurityContext();
+        log.info("Request: Update password for user ID = {}", userId);
+        userService.updatePassword(userId, request);
+        log.info("Response: password updated");
+        String message = messageSource.getMessage("user.password.update.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.noData(HttpStatus.OK, message);
+    }
+
     @PatchMapping(value = "/me/avatar",
                 consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
                 produces = MediaType.APPLICATION_JSON_VALUE
@@ -137,6 +149,5 @@ public class UserController {
         String message = messageSource.getMessage("user.avatar.update.success", null, LocaleContextHolder.getLocale());
         return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
-
 
 }

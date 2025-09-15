@@ -11,12 +11,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class ExceptionHandlingFilter extends OncePerRequestFilter {
 
     private final CustomAuthenticationEntryPoint entryPoint;
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -35,4 +37,5 @@ public class ExceptionHandlingFilter extends OncePerRequestFilter {
                     new InsufficientAuthenticationException(ex.getMessage(), ex));
         }
     }
+
 }

@@ -1,11 +1,9 @@
 package elearningspringboot.service.impl;
 
 import elearningspringboot.dto.request.ExchangeTokenRequest;
+import elearningspringboot.dto.request.ResetPasswordRequest;
 import elearningspringboot.dto.request.SignInRequest;
-import elearningspringboot.dto.response.ExchangeTokenResponse;
-import elearningspringboot.dto.response.GoogleUserInfoResponse;
-import elearningspringboot.dto.response.SignInResponse;
-import elearningspringboot.dto.response.TokenResponse;
+import elearningspringboot.dto.response.*;
 import elearningspringboot.entity.Role;
 import elearningspringboot.entity.User;
 import elearningspringboot.enumeration.ErrorCode;
@@ -76,13 +74,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .user(SignInResponse.builder()
+                .user(UserResponse.builder()
                         .id(user.getId())
+                        .phoneNumber(user.getPhoneNumber())
+                        .address(user.getAddress())
+                        .gender(user.getGender())
+                        .birthDate(user.getBirthDate())
                         .fullName(user.getFullName())
                         .email(user.getEmail())
                         .avatarUrl(user.getAvatarUrl())
                         .role(user.getRole().getRole())
                         .noPassword(user.getNoPassword())
+                        .status(user.getStatus())
+                        .createdAt(user.getCreatedAt())
+                        .updatedAt(user.getUpdatedAt())
                         .permissions(user.getRole().getRoleHasPermissions().stream()
                                 .map(rhp -> rhp.getPermission().getName())
                                 .collect(Collectors.toList()))
@@ -131,13 +136,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
-                .user(SignInResponse.builder()
+                .user(UserResponse.builder()
                         .id(userResponse.getId())
+                        .birthDate(userResponse.getBirthDate())
+                        .phoneNumber(userResponse.getPhoneNumber())
+                        .address(userResponse.getAddress())
+                        .gender(userResponse.getGender())
                         .fullName(userResponse.getFullName())
                         .email(userResponse.getEmail())
                         .avatarUrl(userResponse.getAvatarUrl())
                         .role(userResponse.getRole().getRole())
                         .noPassword(userResponse.getNoPassword())
+                        .status(userResponse.getStatus())
+                        .createdAt(userResponse.getCreatedAt())
+                        .updatedAt(userResponse.getUpdatedAt())
                         .permissions(userResponse.getRole().getRoleHasPermissions().stream()
                                 .map(rhp -> rhp.getPermission().getName())
                                 .collect(Collectors.toList()))
