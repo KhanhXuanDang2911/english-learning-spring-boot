@@ -3,7 +3,6 @@ package elearningspringboot.exception;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import elearningspringboot.dto.response.ErrorResponse;
 import elearningspringboot.enumeration.ErrorCode;
-import elearningspringboot.exception.ResourceNotFoundException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -60,16 +59,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleInvalidTypeParams(MethodArgumentTypeMismatchException e, WebRequest request) {
-        String message = messageSource.getMessage("error.validation.type.mismatch", 
-                new Object[]{e.getName(), Objects.requireNonNull(e.getRequiredType()).getSimpleName()}, 
+        String message = messageSource.getMessage("error.validation.type.mismatch",
+                new Object[]{e.getName(), Objects.requireNonNull(e.getRequiredType()).getSimpleName()},
                 LocaleContextHolder.getLocale());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request, null);
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException e, WebRequest request) {
-        String message = messageSource.getMessage("error.validation.params.missing", 
-                new Object[]{e.getParameterName()}, 
+        String message = messageSource.getMessage("error.validation.params.missing",
+                new Object[]{e.getParameterName()},
                 LocaleContextHolder.getLocale());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request, null);
     }
@@ -98,21 +97,21 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request, null);
     }
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException e, WebRequest request){
+    @ExceptionHandler(elearningspringboot.exception.ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException e, WebRequest request) {
         return buildErrorResponse(HttpStatus.NOT_FOUND, e.getMessage(), request, null);
     }
 
     @ExceptionHandler(ResourceConflictException.class)
-    public ResponseEntity<ErrorResponse> handleResourceConflict(ResourceConflictException e, WebRequest request){
+    public ResponseEntity<ErrorResponse> handleResourceConflict(ResourceConflictException e, WebRequest request) {
         return buildErrorResponse(HttpStatus.CONFLICT, e.getMessage(), request, null);
     }
 
     @ExceptionHandler({BadCredentialsException.class, DisabledException.class, UnauthorizedException.class})
-    public ResponseEntity<ErrorResponse> handleAuthenticationException(RuntimeException e, WebRequest request){
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(RuntimeException e, WebRequest request) {
         HttpStatus status;
         String message;
-        if (e instanceof BadCredentialsException){
+        if (e instanceof BadCredentialsException) {
             status = HttpStatus.UNAUTHORIZED;
             message = messageSource.getMessage("error.invalid.email.password", null, LocaleContextHolder.getLocale());
         } else if (e instanceof DisabledException) {
@@ -130,12 +129,13 @@ public class GlobalExceptionHandler {
         String message = messageSource.getMessage("error.accessDenied", null, LocaleContextHolder.getLocale());
         return buildErrorResponse(HttpStatus.FORBIDDEN, message, request, null);
     }
+
     @ExceptionHandler(MailException.class)
     public ResponseEntity<ErrorResponse> handleEmailException(MailException e, WebRequest request) {
         String message = messageSource.getMessage("error.sendMail", null, LocaleContextHolder.getLocale());
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, request, null);
     }
-    
+
     @ExceptionHandler({ExpiredJwtException.class, MalformedJwtException.class, SignatureException.class})
     public ResponseEntity<ErrorResponse> handleJwtException(Exception e, WebRequest request) {
         String message;
@@ -150,9 +150,14 @@ public class GlobalExceptionHandler {
         }
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, message, request, null);
     }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleInternalError(Exception e, WebRequest request) {
-        System.out.println("WHAT THE HEO handleInternalError");
+        Throwable cause = e.getCause();
+        if (cause instanceof ResourceNotFoundException rnfe) {
+            return buildErrorResponse(HttpStatus.NOT_FOUND, rnfe.getMessage(), request, null);
+        }
+
         String message = messageSource.getMessage("error.internal.server", null, LocaleContextHolder.getLocale());
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, request, null);
     }
@@ -173,7 +178,7 @@ public class GlobalExceptionHandler {
                         .build()
         );
     }
-    
+
     private String getMessageKeyForErrorCode(ErrorCode errorCode) {
         return switch (errorCode) {
             case INVALID_ROLE_ENUM -> "error.invalid.role.enum";
