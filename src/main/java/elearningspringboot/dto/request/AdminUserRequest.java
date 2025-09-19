@@ -29,7 +29,6 @@ public class AdminUserRequest {
             message = "Invalid email format"
     )
     private String email;
-    @NotBlank(message = "Phone number must be not blank")
     @Pattern(
             regexp = "^(?:\\+84|0)[35789][0-9]{8}$",
             message = "Invalid phoneNumber"
