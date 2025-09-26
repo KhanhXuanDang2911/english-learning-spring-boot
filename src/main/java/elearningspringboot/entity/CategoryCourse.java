@@ -1,6 +1,5 @@
 package elearningspringboot.entity;
 
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Table;

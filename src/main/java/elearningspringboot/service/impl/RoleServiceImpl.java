@@ -2,13 +2,10 @@ package elearningspringboot.service.impl;
 
 import elearningspringboot.dto.request.RoleRequest;
 import elearningspringboot.dto.response.RoleResponse;
-import elearningspringboot.entity.Permission;
 import elearningspringboot.entity.Role;
-import elearningspringboot.entity.RoleHasPermission;
 import elearningspringboot.enumeration.UserRole;
 import elearningspringboot.exception.ResourceConflictException;
 import elearningspringboot.exception.ResourceNotFoundException;
-import elearningspringboot.mapper.PermissionMapper;
 import elearningspringboot.mapper.RoleMapper;
 import elearningspringboot.repository.RoleRepository;
 import elearningspringboot.service.RoleService;
@@ -20,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,7 +26,6 @@ public class RoleServiceImpl implements RoleService {
 
     private final RoleRepository roleRepository;
     private final RoleMapper roleMapper;
-    private final PermissionMapper permissionMapper;
     private final MessageSource messageSource;
 
     @Override
@@ -39,7 +34,8 @@ public class RoleServiceImpl implements RoleService {
 
         if (roleRepository.existsByRole(UserRole.getRoleFromName(request.getRole()))) {
             log.error("Role with name '{}' already exists", request.getRole());
-            String message = messageSource.getMessage("role.exists.with.name", new Object[]{request.getRole()}, LocaleContextHolder.getLocale());
+            String message = messageSource.getMessage("role.exists.with.name", new Object[] { request.getRole() },
+                    LocaleContextHolder.getLocale());
             throw new ResourceConflictException(message);
         }
 
@@ -57,7 +53,8 @@ public class RoleServiceImpl implements RoleService {
 
         if (roleRepository.existsByRoleExceptForId(UserRole.getRoleFromName(request.getRole()), id)) {
             log.error("Role with name '{}' already exists (conflict)", request.getRole());
-            String message = messageSource.getMessage("role.exists.with.name", new Object[]{request.getRole()}, LocaleContextHolder.getLocale());
+            String message = messageSource.getMessage("role.exists.with.name", new Object[] { request.getRole() },
+                    LocaleContextHolder.getLocale());
             throw new ResourceConflictException(message);
         }
 
@@ -77,22 +74,13 @@ public class RoleServiceImpl implements RoleService {
 
         List<Role> roles = roleRepository.findAllRoles();
         List<RoleResponse> responses = roles.stream()
-                .map(r -> {
-                    List<Permission> permissions = Optional.ofNullable(r.getRoleHasPermissions())
-                            .orElse(List.of())
-                            .stream()
-                            .map(RoleHasPermission::getPermission)
-                            .collect(Collectors.toList());
-
-                    return RoleResponse.builder()
-                            .id(r.getId())
-                            .role(r.getRole())
-                            .permissions(permissionMapper.toListDTOs(permissions))
-                            .description(r.getDescription())
-                            .createdAt(r.getCreatedAt())
-                            .updatedAt(r.getUpdatedAt())
-                            .build();
-                })
+                .map(r -> RoleResponse.builder()
+                        .id(r.getId())
+                        .role(r.getRole())
+                        .description(r.getDescription())
+                        .createdAt(r.getCreatedAt())
+                        .updatedAt(r.getUpdatedAt())
+                        .build())
                 .collect(Collectors.toList());
 
         log.info("Found {} roles", responses.size());
@@ -105,16 +93,12 @@ public class RoleServiceImpl implements RoleService {
         log.info("Fetching role by name: {}", roleName);
 
         Role role = findRoleByRoleName(roleName);
-        List<Permission> permissions = role.getRoleHasPermissions().stream()
-                .map(RoleHasPermission::getPermission)
-                .collect(Collectors.toList());
 
         log.info("Found role with id = {} for name = {}", role.getId(), roleName);
 
         return RoleResponse.builder()
                 .id(role.getId())
                 .role(role.getRole())
-                .permissions(permissionMapper.toListDTOs(permissions))
                 .description(role.getDescription())
                 .createdAt(role.getCreatedAt())
                 .updatedAt(role.getUpdatedAt())
@@ -139,8 +123,7 @@ public class RoleServiceImpl implements RoleService {
                 .orElseThrow(() -> {
                     log.error("Role with id = {} not found", id);
                     return new ResourceNotFoundException(
-                            String.format("Role with id = %d not found", id)
-                    );
+                            String.format("Role with id = %d not found", id));
                 });
     }
 
@@ -152,8 +135,7 @@ public class RoleServiceImpl implements RoleService {
                 .orElseThrow(() -> {
                     log.error("Role with role name = {} not found", userRole.getName());
                     return new ResourceNotFoundException(
-                            String.format("Role with role name = %s not found", userRole.getName())
-                    );
+                            String.format("Role with role name = %s not found", userRole.getName()));
                 });
     }
 

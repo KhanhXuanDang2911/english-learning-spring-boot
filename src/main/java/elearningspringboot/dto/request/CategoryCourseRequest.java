@@ -15,10 +15,11 @@ import lombok.Setter;
 @AllArgsConstructor
 public class CategoryCourseRequest {
 
-    @NotBlank(message = "{validation.categoryCourse.title.notBlank}", groups = {OnCreate.class, OnUpdate.class})
-    @Size(max = 255, message = "{validation.categoryCourse.title.size}", groups = {OnCreate.class, OnUpdate.class})
+    @NotBlank(message = "{validation.categoryCourse.title.notBlank}", groups = { OnCreate.class, OnUpdate.class })
+    @Size(max = 255, message = "{validation.categoryCourse.title.size}", groups = { OnCreate.class, OnUpdate.class })
     private String title;
 
-    @Size(max = 1000, message = "{validation.categoryCourse.description.size}", groups = {OnCreate.class, OnUpdate.class})
+    @Size(max = 1000, message = "{validation.categoryCourse.description.size}", groups = { OnCreate.class,
+            OnUpdate.class })
     private String description;
 }

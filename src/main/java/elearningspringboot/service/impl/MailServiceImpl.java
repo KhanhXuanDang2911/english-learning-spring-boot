@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.core.token.TokenService;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -45,7 +44,8 @@ public class MailServiceImpl implements MailService {
             Map<String, Object> properties = new HashMap<>();
 
             String confirmToken = jwtService.generateToken(recipient, TokenType.CONFIRM_TOKEN, 24);
-            properties.put("confirmationUrl", String.format("http://localhost:3000/verify-email?token=%s", confirmToken));
+            properties.put("confirmationUrl",
+                    String.format("http://localhost:3000/verify-email?token=%s", confirmToken));
             properties.put("fullName", recipient.getFullName());
             properties.put("expiryHours", 24);
             context.setVariables(properties);

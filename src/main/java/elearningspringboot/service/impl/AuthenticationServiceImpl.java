@@ -1,7 +1,6 @@
 package elearningspringboot.service.impl;
 
 import elearningspringboot.dto.request.ExchangeTokenRequest;
-import elearningspringboot.dto.request.ResetPasswordRequest;
 import elearningspringboot.dto.request.SignInRequest;
 import elearningspringboot.dto.response.*;
 import elearningspringboot.entity.Role;
@@ -11,7 +10,7 @@ import elearningspringboot.enumeration.Gender;
 import elearningspringboot.enumeration.Status;
 import elearningspringboot.enumeration.TokenType;
 import elearningspringboot.exception.AppException;
-import elearningspringboot.exception.UnauthorizedException;
+import elearningspringboot.exception.InvalidTokenException;
 import elearningspringboot.repository.UserRepository;
 import elearningspringboot.repository.httpclient.GoogleIdentityClient;
 import elearningspringboot.repository.httpclient.GoogleUserInfoClient;
@@ -20,17 +19,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -47,7 +41,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final GoogleUserInfoClient googleUserInfoClient;
     private final UserRepository userRepository;
     private final RoleService roleService;
-    private final MessageSource messageSource;
 
     @Value("${oauth2.google.client-id}")
     private String CLIENT_ID;
@@ -55,12 +48,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Value("${oauth2.google.client-secret}")
     private String CLIENT_SECRET;
 
-
     @Override
     public TokenResponse signIn(SignInRequest request) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         User user = userService.findUserByEmail(request.getEmail());
         if (user.getStatus().equals(Status.PENDING)) {
             throw new AppException(ErrorCode.PENDING_ACCOUNT);
@@ -88,9 +79,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .status(user.getStatus())
                         .createdAt(user.getCreatedAt())
                         .updatedAt(user.getUpdatedAt())
-                        .permissions(user.getRole().getRoleHasPermissions().stream()
-                                .map(rhp -> rhp.getPermission().getName())
-                                .collect(Collectors.toList()))
                         .build())
                 .build();
     }
@@ -107,9 +95,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .grantType(GRANT_TYPE)
                 .build();
         ExchangeTokenResponse exchangeTokenResponse = googleIdentityClient.getToken(request);
-        GoogleUserInfoResponse userInfoResponse = googleUserInfoClient.getUserInfo("Bearer " + exchangeTokenResponse.getAccessToken());
+        GoogleUserInfoResponse userInfoResponse = googleUserInfoClient
+                .getUserInfo("Bearer " + exchangeTokenResponse.getAccessToken());
         User userResponse;
-        if (!userRepository.existsByEmail(userInfoResponse.getEmail())){
+        if (!userRepository.existsByEmail(userInfoResponse.getEmail())) {
             Role role = roleService.findRoleByRoleName("USER");
             User user = User.builder()
                     .email(userInfoResponse.getEmail())
@@ -123,7 +112,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             userResponse = userRepository.save(user);
         } else {
             userResponse = userService.findUserByEmail(userInfoResponse.getEmail());
-            if (userResponse.getStatus().equals(Status.PENDING)){
+            if (userResponse.getStatus().equals(Status.PENDING)) {
                 userResponse.setStatus(Status.ACTIVE);
             }
         }
@@ -150,25 +139,21 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .status(userResponse.getStatus())
                         .createdAt(userResponse.getCreatedAt())
                         .updatedAt(userResponse.getUpdatedAt())
-                        .permissions(userResponse.getRole().getRoleHasPermissions().stream()
-                                .map(rhp -> rhp.getPermission().getName())
-                                .collect(Collectors.toList()))
                         .build())
                 .build();
     }
 
     @Override
-    public TokenResponse refreshToken(String refreshToken){
+    public TokenResponse refreshToken(String refreshToken) {
         if (StringUtils.isBlank(refreshToken)) {
-            String message = messageSource.getMessage("auth.refresh.invalid", null, LocaleContextHolder.getLocale());
-            throw new UnauthorizedException(message);
+            throw new InvalidTokenException();
         }
         String email = jwtService.extractEmail(refreshToken, TokenType.REFRESH_TOKEN);
 
         UserDetails user = userDetailsService.loadUserByUsername(email);
-        if (!jwtService.isTokenValid(refreshToken, user, TokenType.REFRESH_TOKEN) || !whitelistTokenService.existsByToken(refreshToken)) {
-            String message = messageSource.getMessage("auth.refresh.invalid", null, LocaleContextHolder.getLocale());
-            throw new UnauthorizedException(message);
+        if (!jwtService.isTokenValid(refreshToken, user, TokenType.REFRESH_TOKEN)
+                || !whitelistTokenService.existsByToken(refreshToken)) {
+            throw new InvalidTokenException();
         }
         String newAccessToken = jwtService.generateAccessToken(user);
 
@@ -191,15 +176,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             UserDetails user = userDetailsService.loadUserByUsername(email);
 
             if (!jwtService.isTokenValid(refreshToken, user, TokenType.REFRESH_TOKEN)) {
-                String message = messageSource.getMessage("auth.refresh.invalid", null, LocaleContextHolder.getLocale());
-                throw new UnauthorizedException(message);
+                throw new InvalidTokenException();
             }
 
             if (!whitelistTokenService.existsByToken(refreshToken)) {
-                String message = messageSource.getMessage("auth.refresh.not.whitelisted", null, LocaleContextHolder.getLocale());
-                throw new UnauthorizedException(message);
+                throw new InvalidTokenException();
             }
-
             whitelistTokenService.deleteByToken(refreshToken);
         }
     }

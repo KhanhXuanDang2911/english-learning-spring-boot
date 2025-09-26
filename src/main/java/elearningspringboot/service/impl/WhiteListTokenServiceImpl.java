@@ -22,7 +22,7 @@ public class WhiteListTokenServiceImpl implements WhitelistTokenService {
     private final JwtService jwtService;
 
     @Override
-    public void createToken(String token, TokenType tokenType, String email){
+    public void createToken(String token, TokenType tokenType, String email) {
         Date expiredTime = jwtService.extractExpiration(token, tokenType);
         LocalDateTime localDateTime = expiredTime.toInstant()
                 .atZone(ZoneId.systemDefault())
@@ -38,11 +38,11 @@ public class WhiteListTokenServiceImpl implements WhitelistTokenService {
     }
 
     @Override
-    public void deleteByToken(String token){
+    public void deleteByToken(String token) {
         blacklistTokenRepository.deleteByToken(token);
     }
 
-    public boolean existsByToken(String token){
+    public boolean existsByToken(String token) {
         return blacklistTokenRepository.existsByToken(token);
     }
 

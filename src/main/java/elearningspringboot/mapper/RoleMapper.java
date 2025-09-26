@@ -9,7 +9,9 @@ import org.mapstruct.*;
 public interface RoleMapper {
     @Mapping(target = "role", ignore = true)
     Role toEntity(RoleRequest request);
+
     RoleResponse toDTO(Role entity);
+
     @Mapping(target = "role", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDTO(RoleRequest request, @MappingTarget Role role);

@@ -20,7 +20,8 @@ public interface UserService {
 
     User findUserByEmail(String email);
 
-    PageResponse<List<UserResponse>> getUsersWithPaginationAndKeyword(int pageNumber, int pageSize, List<String> sorts, String keyword);
+    PageResponse<List<UserResponse>> getUsersWithPaginationAndKeyword(int pageNumber, int pageSize, List<String> sorts,
+            String keyword);
 
     UserResponse updateUser(Long id, MultipartFile avatar, AdminUserRequest request);
 
@@ -38,7 +39,7 @@ public interface UserService {
 
     void verifyEmail(String token);
 
-    void createPassword(UserCreationPassword request);
+    void createPassword(UserCreationPasswordRequest request);
 
     void deleteUser(Long id);
 }

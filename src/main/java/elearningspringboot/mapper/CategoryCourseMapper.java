@@ -11,9 +11,12 @@ import java.util.List;
 public interface CategoryCourseMapper {
     @Mapping(target = "slug", ignore = true)
     CategoryCourse toEntity(CategoryCourseRequest request);
+
     CategoryCourseResponse toDTO(CategoryCourse entity);
+
     @Mapping(target = "slug", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromRequest(CategoryCourseRequest request, @MappingTarget CategoryCourse entity);
-    List<CategoryCourseResponse> toListDTOs(List<CategoryCourse> entities) ;
+
+    List<CategoryCourseResponse> toListDTOs(List<CategoryCourse> entities);
 }

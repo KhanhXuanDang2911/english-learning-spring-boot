@@ -42,15 +42,17 @@ public class UserController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public ResponseEntity<ResponseData<PageResponse<List<UserResponse>>>> getAllUsers(
+    public ResponseEntity<ResponseData<PageResponse<List<UserResponse>>>> getAllUsersWithPagination(
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "{validation.page.number.min}") int pageNumber,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "{validation.page.size.min}") int pageSize,
             @RequestParam(required = false) List<String> sorts,
-            @RequestParam(defaultValue = "") String keyword
-    ) {
-        log.info("Request: Get users with pageNumber={}, pageSize={}, sorts={}, keyword={}", pageNumber, pageSize, sorts, keyword);
-        PageResponse<List<UserResponse>> response = userService.getUsersWithPaginationAndKeyword(pageNumber, pageSize, sorts, keyword);
-        log.info("Response: {} users fetched (page {}/{})", response.getNumberOfElements(), response.getPageNumber(), response.getTotalPages());
+            @RequestParam(defaultValue = "") String keyword) {
+        log.info("Request: Get users with pageNumber={}, pageSize={}, sorts={}, keyword={}", pageNumber, pageSize,
+                sorts, keyword);
+        PageResponse<List<UserResponse>> response = userService.getUsersWithPaginationAndKeyword(pageNumber, pageSize,
+                sorts, keyword);
+        log.info("Response: {} users fetched (page {}/{})", response.getNumberOfElements(), response.getPageNumber(),
+                response.getTotalPages());
         String message = messageSource.getMessage("user.get.list.success", null, LocaleContextHolder.getLocale());
         return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
@@ -67,11 +69,10 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping(
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseData<UserResponse>> createUser(@ValidImageFile @RequestPart(value = "avatar", required = false) MultipartFile avatar,
-                                                                 @RequestPart("user") @Validated({OnCreate.class, Default.class}) AdminUserRequest request) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseData<UserResponse>> createUser(
+            @ValidImageFile @RequestPart(value = "avatar", required = false) MultipartFile avatar,
+            @RequestPart("user") @Validated({ OnCreate.class, Default.class }) AdminUserRequest request) {
         log.info("Request: Admin create user with data = {}", request);
         UserResponse response = userService.createUser(avatar, request);
         log.info("Response: User created = {}", response);
@@ -80,13 +81,11 @@ public class UserController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping(value = "/{id}",
-                consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-                produces = MediaType.APPLICATION_JSON_VALUE
-    )
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseData<UserResponse>> updateUser(
             @PathVariable("id") @Min(value = 1, message = "Id must be greater than 0") Long id,
-            @ValidImageFile @RequestPart(value = "avatar", required = false) MultipartFile avatar, @RequestPart("user") @Validated({OnUpdate.class, Default.class}) AdminUserRequest request) {
+            @ValidImageFile @RequestPart(value = "avatar", required = false) MultipartFile avatar,
+            @RequestPart("user") @Validated({ OnUpdate.class, Default.class }) AdminUserRequest request) {
         log.info("Request: Update user with ID = {}, data = {}", id, request);
         UserResponse response = userService.updateUser(id, avatar, request);
         log.info("Response: User updated = {}", response);
@@ -115,7 +114,7 @@ public class UserController {
 
     @PutMapping("/me")
     public ResponseEntity<ResponseData<UserResponse>> updateProfile(
-            @RequestBody @Validated({OnUpdate.class, Default.class}) UserRequest request) {
+            @RequestBody @Validated({ OnUpdate.class, Default.class }) UserRequest request) {
         Long userId = getUserIdFromSecurityContext();
 
         log.info("Request: Update profile for user ID = {}, data = {}", userId, request);
@@ -127,20 +126,19 @@ public class UserController {
     }
 
     @PatchMapping("/me/password")
-    public ResponseEntity<ResponseData<Void>> changePassword(@Valid @RequestBody UpdatePasswordRequest request ) {
+    public ResponseEntity<ResponseData<Void>> changePassword(@Valid @RequestBody UpdatePasswordRequest request) {
         Long userId = getUserIdFromSecurityContext();
         log.info("Request: Update password for user ID = {}", userId);
         userService.updatePassword(userId, request);
         log.info("Response: password updated");
-        String message = messageSource.getMessage("user.password.update.success", null, LocaleContextHolder.getLocale());
+        String message = messageSource.getMessage("user.password.update.success", null,
+                LocaleContextHolder.getLocale());
         return ResponseBuilder.noData(HttpStatus.OK, message);
     }
 
-    @PatchMapping(value = "/me/avatar",
-                consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-                produces = MediaType.APPLICATION_JSON_VALUE
-    )
-    public ResponseEntity<ResponseData<UserResponse>> updateAvatar(@ValidImageFile @RequestParam("avatar") MultipartFile avatar) {
+    @PatchMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseData<UserResponse>> updateAvatar(
+            @ValidImageFile @RequestParam("avatar") MultipartFile avatar) {
         Long userId = getUserIdFromSecurityContext();
         log.info("Request: Update avatar for user ID = {}", userId);
         UserResponse response = userService.updateAvatar(userId, avatar);

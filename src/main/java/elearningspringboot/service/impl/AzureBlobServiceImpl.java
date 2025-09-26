@@ -28,7 +28,8 @@ public class AzureBlobServiceImpl implements AzureBlobService {
     @Override
     public String uploadFile(MultipartFile file) {
         String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
-        log.info("Uploading file to Azure: fileName={}, containerName={}, contentType={}", fileName, containerName, file.getContentType());
+        log.info("Uploading file to Azure: fileName={}, containerName={}, contentType={}", fileName, containerName,
+                file.getContentType());
         try {
             byte[] bytes = file.getBytes();
             ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
@@ -58,7 +59,6 @@ public class AzureBlobServiceImpl implements AzureBlobService {
         }
     }
 
-
     @Override
     public boolean deleteFile(String fileName) {
         BlockBlobClient blobClient = new BlobClientBuilder()
@@ -74,5 +74,35 @@ public class AzureBlobServiceImpl implements AzureBlobService {
         }
 
         return false;
+    }
+
+    @Override
+    public String uploadBytes(byte[] data, String filename, String contentType) {
+        String fileName = UUID.randomUUID() + "-" + filename;
+        log.info("Uploading bytes to Azure: fileName={}, containerName={}, contentType={}", fileName, containerName,
+                contentType);
+        try {
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
+
+            BlockBlobClient blobClient = new BlobClientBuilder()
+                    .connectionString(connectionString)
+                    .containerName(containerName)
+                    .blobName(fileName)
+                    .buildClient()
+                    .getBlockBlobClient();
+
+            blobClient.upload(inputStream, data.length, true);
+
+            BlobHttpHeaders headers = new BlobHttpHeaders()
+                    .setContentType(contentType);
+            blobClient.setHttpHeaders(headers);
+
+            log.info("Upload successful: {}", blobClient.getBlobUrl());
+            return blobClient.getBlobUrl();
+
+        } catch (Exception e) {
+            log.error("Upload failed due to unexpected error: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.UPLOAD_FILE_FAILED);
+        }
     }
 }

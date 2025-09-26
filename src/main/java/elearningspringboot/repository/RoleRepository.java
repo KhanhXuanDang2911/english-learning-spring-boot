@@ -2,7 +2,6 @@ package elearningspringboot.repository;
 
 import elearningspringboot.entity.Role;
 import elearningspringboot.enumeration.UserRole;
-import org.springframework.data.domain.Example;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,10 +12,10 @@ import java.util.Optional;
 
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Long> {
-    @Query("select distinct r from Role r left join fetch r.roleHasPermissions")
+    @Query("select distinct r from Role r")
     List<Role> findAllRoles();
 
-    @Query("select distinct r from Role r left join fetch r.roleHasPermissions where r.role = :role")
+    @Query("select distinct r from Role r where r.role = :role")
     Optional<Role> findByRole(@Param("role") UserRole role);
 
     boolean existsByRole(UserRole role);

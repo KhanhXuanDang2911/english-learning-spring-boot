@@ -4,6 +4,9 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.io.InputStream;
+
 public class ImageFileValidator implements ConstraintValidator<ValidImageFile, MultipartFile> {
 
     @Override
@@ -12,9 +15,15 @@ public class ImageFileValidator implements ConstraintValidator<ValidImageFile, M
             return true;
         }
 
-        String contentType = file.getContentType();
-        return contentType != null && (
-                contentType.startsWith("image/")
-        );
+        try (InputStream in = file.getInputStream()) {
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
+                return false;
+            }
+            return ImageIO.read(in) != null;
+        } catch (Exception e) {
+            return false;
+        }
     }
+
 }

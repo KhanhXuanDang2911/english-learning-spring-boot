@@ -13,6 +13,8 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = ImageFileValidator.class)
 public @interface ValidImageFile {
     String message() default "Only image file is accepted";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 }

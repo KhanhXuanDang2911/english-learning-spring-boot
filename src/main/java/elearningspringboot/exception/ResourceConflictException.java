@@ -1,6 +1,6 @@
 package elearningspringboot.exception;
 
-public class ResourceConflictException extends RuntimeException{
+public class ResourceConflictException extends RuntimeException {
     public ResourceConflictException(String message) {
         super(message);
     }

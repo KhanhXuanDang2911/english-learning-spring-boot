@@ -1,9 +1,9 @@
 package elearningspringboot.configuration;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -22,8 +22,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import elearningspringboot.configuration.CustomAuthenticationEntryPoint;
-import elearningspringboot.configuration.CustomAccessDeniedHandler;
 import java.util.List;
 
 @Configuration
@@ -37,8 +35,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
-    private final ExceptionHandlingFilter exceptionHandlingFilter;
-    private final String[] WHITE_LIST = {"/api/v1/auth/**"};
+    private final String[] WHITE_LIST = { "/api/v1/auth/**" };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -46,14 +43,14 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize.requestMatchers(WHITE_LIST).permitAll()
                         .requestMatchers("/api/v1/roles/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/permissions/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/role-permissions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/categories-post/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/categories-course/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts/public/**", "/api/v1/posts/{id}").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(provider())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler))
-                .addFilterBefore(exceptionHandlingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
@@ -68,9 +65,9 @@ public class SecurityConfig {
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
-        return webSecurity ->
-                webSecurity.ignoring()
-                        .requestMatchers("/actuator/**", "/v3/**", "/webjars/**", "/swagger-ui*/*swagger-initializer.js", "/swagger-ui*/**");
+        return webSecurity -> webSecurity.ignoring()
+                .requestMatchers("/actuator/**", "/v3/**", "/webjars/**", "/swagger-ui*/*swagger-initializer.js",
+                        "/swagger-ui*/**");
     }
 
     @Bean

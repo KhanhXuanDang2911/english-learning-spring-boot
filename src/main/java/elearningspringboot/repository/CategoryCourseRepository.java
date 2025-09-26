@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CategoryCourseRepository extends JpaRepository<CategoryCourse, Long> {
     boolean existsByTitle(String title);
+
     boolean existsByTitleAndIdNot(String title, Long id);
 
     @Query("select c from CategoryCourse c where lower(c.title) like %:keyword% OR lower(c.description) like %:keyword%")
