@@ -1,7 +1,7 @@
 package elearningspringboot.service.impl;
 
 import elearningspringboot.enumeration.TokenType;
-import elearningspringboot.exception.UnauthorizedException;
+import elearningspringboot.exception.InvalidTokenException;
 import elearningspringboot.service.JwtService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -9,7 +9,6 @@ import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -56,7 +55,6 @@ public class JwtServiceImpl implements JwtService {
                 .compact();
     }
 
-
     public String generateRefreshToken(UserDetails userDetails) {
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
@@ -66,7 +64,6 @@ public class JwtServiceImpl implements JwtService {
                 .signWith(getKey(TokenType.REFRESH_TOKEN), SignatureAlgorithm.HS256)
                 .compact();
     }
-
 
     public String generateToken(UserDetails userDetails, TokenType tokenType, long hour) {
         return Jwts.builder()
@@ -85,15 +82,8 @@ public class JwtServiceImpl implements JwtService {
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-        } catch (ExpiredJwtException e) {
-            String message = messageSource.getMessage("auth.token.expired", null, LocaleContextHolder.getLocale());
-            throw new UnauthorizedException(message, e);
-        } catch (MalformedJwtException e) {
-            String message = messageSource.getMessage("auth.token.invalid.format", null, LocaleContextHolder.getLocale());
-            throw new UnauthorizedException(message, e);
-        } catch (SignatureException e) {
-            String message = messageSource.getMessage("auth.token.invalid.signature", null, LocaleContextHolder.getLocale());
-            throw new UnauthorizedException(message, e);
+        } catch (Exception e) {
+            throw new InvalidTokenException();
         }
     }
 
@@ -108,7 +98,8 @@ public class JwtServiceImpl implements JwtService {
     public boolean isTokenValid(String token, UserDetails userDetails, TokenType tokenType) {
         final String email = extractEmail(token, tokenType);
         if (!tokenType.equals(TokenType.CONFIRM_TOKEN))
-            return userDetails.isEnabled() && email.equals(userDetails.getUsername()) && !isTokenExpired(extractExpiration(token, tokenType));
+            return userDetails.isEnabled() && email.equals(userDetails.getUsername())
+                    && !isTokenExpired(extractExpiration(token, tokenType));
         else
             return email.equals(userDetails.getUsername()) && !isTokenExpired(extractExpiration(token, tokenType));
 

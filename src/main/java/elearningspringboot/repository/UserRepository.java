@@ -23,11 +23,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("""
              select distinct u from User u
              join fetch u.role r
-             left join fetch r.roleHasPermissions rp
-             left join fetch rp.permission
              where u.email = :email
             """)
-    Optional<User> findByEmailWithPermissions(@Param("email") String email);
+    Optional<User> findByEmailWithRole(@Param("email") String email);
 
     boolean existsByEmail(String email);
 
@@ -41,7 +39,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Modifying
     @Query("DELETE FROM User u WHERE u.status = :status AND u.createdAt < :expiredAt")
     void deleteExpiredPendingUsers(@Param("status") Status status,
-                                   @Param("expiredAt") LocalDateTime expiredAt);
+            @Param("expiredAt") LocalDateTime expiredAt);
 
     @Query("select u.noPassword from User u where u.email = :email")
     Boolean getStatusPassword(@Param("email") String email);

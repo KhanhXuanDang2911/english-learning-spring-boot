@@ -8,6 +8,7 @@ public enum ErrorCode {
     INVALID_GENDER_ENUM(40002, "Invalid name gender enum"),
     INVALID_STATUS_ENUM(40003, "Invalid name status enum"),
     INVALID_REFRESH_TOKEN(40101, "Invalid refresh token"),
+    INVALID_STATUS_POST_ENUM(40102, "Invalid status post enum"),
     PENDING_ACCOUNT(40004, "Pending account"),
     PASSWORD_NOT_MATCH(40005, "Password not match"),
     ACCOUNT_NOT_ACTIVE(40006, "Account not active"),

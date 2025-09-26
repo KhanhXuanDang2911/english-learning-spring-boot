@@ -9,12 +9,13 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Repository
 public interface WhitelistTokenRepository extends JpaRepository<WhitelistToken, Long> {
     void deleteByToken(String token);
+
     void deleteByEmail(String email);
+
     boolean existsByToken(String token);
 
     @Modifying

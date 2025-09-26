@@ -1,6 +1,5 @@
 package elearningspringboot.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import elearningspringboot.enumeration.Gender;
 import elearningspringboot.enumeration.Status;
 import elearningspringboot.enumeration.UserRole;
@@ -11,7 +10,6 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Getter
 @Setter
@@ -29,6 +27,4 @@ public class UserResponse extends BaseResponse {
     private Status status;
     private Gender gender;
     private Boolean noPassword;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private List<String> permissions;
 }

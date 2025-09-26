@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -38,14 +39,13 @@ public class User extends BaseEntity implements UserDetails {
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
+    @OneToMany(mappedBy = "author")
+    private List<Post> posts;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Set<GrantedAuthority> authorities = new HashSet<>();
         authorities.add(new SimpleGrantedAuthority(String.format("ROLE_%s", this.role.getRole().getName())));
-        for (RoleHasPermission r : this.role.getRoleHasPermissions()) {
-            authorities.add(new SimpleGrantedAuthority(r.getPermission().getName()));
-        }
         return authorities;
     }
 
@@ -53,7 +53,6 @@ public class User extends BaseEntity implements UserDetails {
     public String getUsername() {
         return this.email;
     }
-
 
     @Override
     public boolean isEnabled() {

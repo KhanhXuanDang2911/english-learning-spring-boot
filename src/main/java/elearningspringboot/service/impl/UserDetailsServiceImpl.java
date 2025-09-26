@@ -1,6 +1,5 @@
 package elearningspringboot.service.impl;
 
-import elearningspringboot.exception.ResourceNotFoundException;
 import elearningspringboot.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,11 +20,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return userRepository.findByEmailWithPermissions(email)
+        return userRepository.findByEmailWithRole(email)
                 .orElseThrow(() -> {
                     log.error("User with email {} not found", email);
-                    String message = messageSource.getMessage("user.not.found.by.email", new Object[]{email}, LocaleContextHolder.getLocale());
-                    return new ResourceNotFoundException(message);
+                    String message = messageSource.getMessage("user.not.found.by.email", new Object[] { email },
+                            LocaleContextHolder.getLocale());
+                    return new UsernameNotFoundException(message);
                 });
     }
 }

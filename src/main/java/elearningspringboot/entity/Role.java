@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @Entity
 @Table(name = "roles")
-public class Role extends BaseEntity{
+public class Role extends BaseEntity {
     @Column(nullable = false, unique = true)
     @Enumerated(EnumType.STRING)
     private UserRole role;
@@ -24,6 +24,4 @@ public class Role extends BaseEntity{
     @OneToMany(mappedBy = "role")
     private List<User> users;
 
-    @OneToMany(mappedBy = "role")
-    private List<RoleHasPermission> roleHasPermissions;
 }

@@ -3,9 +3,6 @@ package elearningspringboot.exception;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import elearningspringboot.dto.response.ErrorResponse;
 import elearningspringboot.enumeration.ErrorCode;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.security.SignatureException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -14,8 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.mail.MailException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -41,41 +40,50 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationBody(MethodArgumentNotValidException e, WebRequest request) {
-        String message = messageSource.getMessage("error.validation.body.invalid", null, LocaleContextHolder.getLocale());
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request, e.getBindingResult().getFieldErrors().stream().map(ex -> ErrorResponse.FieldError.builder()
-                .fieldName(ex.getField())
-                .message(ex.getDefaultMessage())
-                .build()).collect(Collectors.toList()));
+        String message = messageSource.getMessage("error.validation.body.invalid", null,
+                LocaleContextHolder.getLocale());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request,
+                e.getBindingResult().getFieldErrors().stream().map(ex -> ErrorResponse.FieldError.builder()
+                        .fieldName(ex.getField())
+                        .message(ex.getDefaultMessage())
+                        .build()).collect(Collectors.toList()));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleValidationParams(ConstraintViolationException e, WebRequest request) {
-        String message = messageSource.getMessage("error.validation.params.invalid", null, LocaleContextHolder.getLocale());
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request, e.getConstraintViolations().stream().map(v -> ErrorResponse.FieldError.builder()
-                .fieldName(v.getPropertyPath().toString().substring(v.getPropertyPath().toString().lastIndexOf(".") + 1))
-                .message(v.getMessage())
-                .build()).collect(Collectors.toList()));
+        String message = messageSource.getMessage("error.validation.params.invalid", null,
+                LocaleContextHolder.getLocale());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request,
+                e.getConstraintViolations().stream().map(v -> ErrorResponse.FieldError.builder()
+                        .fieldName(v.getPropertyPath().toString()
+                                .substring(v.getPropertyPath().toString().lastIndexOf(".") + 1))
+                        .message(v.getMessage())
+                        .build()).collect(Collectors.toList()));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidTypeParams(MethodArgumentTypeMismatchException e, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleInvalidTypeParams(MethodArgumentTypeMismatchException e,
+            WebRequest request) {
         String message = messageSource.getMessage("error.validation.type.mismatch",
-                new Object[]{e.getName(), Objects.requireNonNull(e.getRequiredType()).getSimpleName()},
+                new Object[] { e.getName(), Objects.requireNonNull(e.getRequiredType()).getSimpleName() },
                 LocaleContextHolder.getLocale());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request, null);
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException e, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestParameterException e,
+            WebRequest request) {
         String message = messageSource.getMessage("error.validation.params.missing",
-                new Object[]{e.getParameterName()},
+                new Object[] { e.getParameterName() },
                 LocaleContextHolder.getLocale());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request, null);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex, WebRequest request) {
-        String message = messageSource.getMessage("error.validation.body.not.readable", null, LocaleContextHolder.getLocale());
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
+            WebRequest request) {
+        String message = messageSource.getMessage("error.validation.body.not.readable", null,
+                LocaleContextHolder.getLocale());
 
         Throwable cause = ex.getCause();
         if (cause instanceof InvalidFormatException ife) {
@@ -88,9 +96,11 @@ public class GlobalExceptionHandler {
             Class<?> targetType = ife.getTargetType();
 
             if (targetType == Integer.class || targetType == Long.class || targetType == Double.class) {
-                message = messageSource.getMessage("validation.field.number", new Object[]{fieldName}, LocaleContextHolder.getLocale());
+                message = messageSource.getMessage("validation.field.number", new Object[] { fieldName },
+                        LocaleContextHolder.getLocale());
             } else if (targetType == LocalDate.class || targetType == Date.class) {
-                message = messageSource.getMessage("validation.field.date", new Object[]{fieldName}, LocaleContextHolder.getLocale());
+                message = messageSource.getMessage("validation.field.date", new Object[] { fieldName },
+                        LocaleContextHolder.getLocale());
             }
         }
 
@@ -107,21 +117,10 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.CONFLICT, e.getMessage(), request, null);
     }
 
-    @ExceptionHandler({BadCredentialsException.class, DisabledException.class, UnauthorizedException.class})
-    public ResponseEntity<ErrorResponse> handleAuthenticationException(RuntimeException e, WebRequest request) {
-        HttpStatus status;
-        String message;
-        if (e instanceof BadCredentialsException) {
-            status = HttpStatus.UNAUTHORIZED;
-            message = messageSource.getMessage("error.invalid.email.password", null, LocaleContextHolder.getLocale());
-        } else if (e instanceof DisabledException) {
-            status = HttpStatus.FORBIDDEN;
-            message = messageSource.getMessage("error.disableAccount", null, LocaleContextHolder.getLocale());
-        } else {
-            status = HttpStatus.UNAUTHORIZED;
-            message = e.getMessage();
-        }
-        return buildErrorResponse(status, message, request, null);
+    @ExceptionHandler(MailException.class)
+    public ResponseEntity<ErrorResponse> handleEmailException(MailException e, WebRequest request) {
+        String message = messageSource.getMessage("error.sendMail", null, LocaleContextHolder.getLocale());
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, request, null);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
@@ -130,38 +129,41 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.FORBIDDEN, message, request, null);
     }
 
-    @ExceptionHandler(MailException.class)
-    public ResponseEntity<ErrorResponse> handleEmailException(MailException e, WebRequest request) {
-        String message = messageSource.getMessage("error.sendMail", null, LocaleContextHolder.getLocale());
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, request, null);
-    }
-
-    @ExceptionHandler({ExpiredJwtException.class, MalformedJwtException.class, SignatureException.class})
-    public ResponseEntity<ErrorResponse> handleJwtException(Exception e, WebRequest request) {
-        String message;
-        if (e instanceof ExpiredJwtException) {
-            message = messageSource.getMessage("auth.token.expired", null, LocaleContextHolder.getLocale());
-        } else if (e instanceof MalformedJwtException) {
-            message = messageSource.getMessage("auth.token.invalid.format", null, LocaleContextHolder.getLocale());
-        } else if (e instanceof SignatureException) {
-            message = messageSource.getMessage("auth.token.invalid.signature", null, LocaleContextHolder.getLocale());
-        } else {
-            message = messageSource.getMessage("error.internal.server", null, LocaleContextHolder.getLocale());
-        }
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTokenException(InvalidTokenException e, WebRequest request) {
+        String message = messageSource.getMessage("auth.token.invalid", null, LocaleContextHolder.getLocale());
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, message, request, null);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleInternalError(Exception e, WebRequest request) {
-        Throwable cause = e.getCause();
-        if (cause instanceof ResourceNotFoundException rnfe) {
-            return buildErrorResponse(HttpStatus.NOT_FOUND, rnfe.getMessage(), request, null);
-        }
-
-        String message = messageSource.getMessage("error.internal.server", null, LocaleContextHolder.getLocale());
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, request, null);
+    @ExceptionHandler(AccountStatusException.class)
+    public ResponseEntity<ErrorResponse> handleAccountStatusException(AccountStatusException e, WebRequest request) {
+        String message = messageSource.getMessage("error.disableAccount", null, LocaleContextHolder.getLocale());
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, message, request, null);
     }
 
+    @ExceptionHandler({ UsernameNotFoundException.class, BadCredentialsException.class })
+    public ResponseEntity<ErrorResponse> handleSignInException(Exception e, WebRequest request) {
+        String message = messageSource.getMessage("error.invalid.email.password", null,
+                LocaleContextHolder.getLocale());
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, message, request, null);
+    }
+
+    @ExceptionHandler(InsufficientAuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientAuthenticationException(
+            InsufficientAuthenticationException e, WebRequest request) {
+        String message = messageSource.getMessage("error.insufficientAuthentication", null,
+                LocaleContextHolder.getLocale());
+        return buildErrorResponse(HttpStatus.UNAUTHORIZED, message, request, null);
+    }
+
+    // @ExceptionHandler(Exception.class)
+    // public ResponseEntity<ErrorResponse> handleInternalError(Exception e,
+    // WebRequest request) {
+    // String message = messageSource.getMessage("error.internal.server", null,
+    // LocaleContextHolder.getLocale());
+    // return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, request,
+    // null);
+    // }
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResponse> handleAppError(AppException e, WebRequest request) {
@@ -175,8 +177,7 @@ public class GlobalExceptionHandler {
                         .error(message)
                         .message(message)
                         .errors(null)
-                        .build()
-        );
+                        .build());
     }
 
     private String getMessageKeyForErrorCode(ErrorCode errorCode) {
@@ -189,10 +190,12 @@ public class GlobalExceptionHandler {
             case UPLOAD_FILE_FAILED -> "error.upload.failed";
             case PASSWORD_NOT_MATCH -> "error.password.mismatch";
             case ACCOUNT_NOT_ACTIVE -> "error.account.notActive";
+            case INVALID_STATUS_POST_ENUM -> "error.invalid.post.enum";
         };
     }
 
-    private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String message, WebRequest request, List<ErrorResponse.FieldError> errors) {
+    private ResponseEntity<ErrorResponse> buildErrorResponse(HttpStatus status, String message, WebRequest request,
+            List<ErrorResponse.FieldError> errors) {
         return ResponseEntity.status(status).body(
                 ErrorResponse.builder()
                         .timestamp(LocalDateTime.now())
@@ -201,8 +204,7 @@ public class GlobalExceptionHandler {
                         .error(status.getReasonPhrase())
                         .message(message)
                         .errors(errors)
-                        .build()
-        );
+                        .build());
     }
 
 }

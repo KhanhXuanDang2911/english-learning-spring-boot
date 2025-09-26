@@ -29,8 +29,8 @@ public class DataInitializer implements CommandLineRunner {
         initAdminUser();
     }
 
-    public void initAdminUser(){
-        if (!userRepository.existsByEmail("admin@example.com")){
+    public void initAdminUser() {
+        if (!userRepository.existsByEmail("admin@example.com")) {
             AdminUserRequest admin = AdminUserRequest.builder()
                     .fullName("System Administrator")
                     .email("admin@example.com")
@@ -62,7 +62,7 @@ public class DataInitializer implements CommandLineRunner {
         if (!roleRepository.existsByRole(UserRole.TEACHER)) {
             roleService.createRole(RoleRequest.builder()
                     .role("TEACHER")
-                    .description("Instructor role with permissions to manage courses and students")
+                    .description("Instructor role with privileges to manage courses and students")
                     .build());
         }
     }

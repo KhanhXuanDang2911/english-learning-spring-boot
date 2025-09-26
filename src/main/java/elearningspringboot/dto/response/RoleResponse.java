@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
-
 @Getter
 @Setter
 @AllArgsConstructor
@@ -19,5 +17,4 @@ import java.util.List;
 public class RoleResponse extends BaseResponse {
     private UserRole role;
     private String description;
-    private List<PermissionResponse> permissions;
 }

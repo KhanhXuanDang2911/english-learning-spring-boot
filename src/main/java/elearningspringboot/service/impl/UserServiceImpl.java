@@ -10,9 +10,9 @@ import elearningspringboot.enumeration.Gender;
 import elearningspringboot.enumeration.Status;
 import elearningspringboot.enumeration.TokenType;
 import elearningspringboot.exception.AppException;
+import elearningspringboot.exception.InvalidTokenException;
 import elearningspringboot.exception.ResourceConflictException;
 import elearningspringboot.exception.ResourceNotFoundException;
-import elearningspringboot.exception.UnauthorizedException;
 import elearningspringboot.mapper.UserMapper;
 import elearningspringboot.repository.UserRepository;
 import elearningspringboot.service.*;
@@ -31,7 +31,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -51,7 +50,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse createUser(MultipartFile avatar, AdminUserRequest request) {
-                log.info("Admin creating new user with email: {}", request.getEmail());
+        log.info("Admin creating new user with email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
             log.error("Cannot create user. Email '{}' already exists", request.getEmail());
@@ -74,7 +73,7 @@ public class UserServiceImpl implements UserService {
         }
         userRepository.save(user);
         log.info("User created successfully with ID: {}", user.getId());
-        UserResponse userResponse =userMapper.toDTO(user);
+        UserResponse userResponse = userMapper.toDTO(user);
         userResponse.setRole(user.getRole().getRole());
         return userResponse;
     }
@@ -85,7 +84,8 @@ public class UserServiceImpl implements UserService {
 
         if (userRepository.existsByEmail(request.getEmail())) {
             log.error("Cannot register user. Email '{}' already exists", request.getEmail());
-            String message = messageSource.getMessage("user.email.exists.with.email", new Object[]{request.getEmail()}, LocaleContextHolder.getLocale());
+            String message = messageSource.getMessage("user.email.exists.with.email",
+                    new Object[] { request.getEmail() }, LocaleContextHolder.getLocale());
             throw new ResourceConflictException(message);
         }
 
@@ -100,11 +100,8 @@ public class UserServiceImpl implements UserService {
         mailService.sendConfirmLink(user);
 
         log.info("User registered successfully with ID: {}", user.getId());
-        UserResponse userResponse =userMapper.toDTO(user);
+        UserResponse userResponse = userMapper.toDTO(user);
         userResponse.setRole(user.getRole().getRole());
-        userResponse.setPermissions(user.getRole().getRoleHasPermissions().stream()
-                .map(rhp -> rhp.getPermission().getName())
-                .collect(Collectors.toList()));
         return userResponse;
     }
 
@@ -118,21 +115,18 @@ public class UserServiceImpl implements UserService {
 
         UserResponse userResponse = userMapper.toDTO(user);
         userResponse.setRole(user.getRole().getRole());
-        userResponse.setPermissions(user.getRole().getRoleHasPermissions().stream()
-                .map(rhp -> rhp.getPermission().getName())
-                .collect(Collectors.toList()));
         return userResponse;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<List<UserResponse>> getUsersWithPaginationAndKeyword(int pageNumber, int pageSize, List<String> sorts, String keyword) {
+    public PageResponse<List<UserResponse>> getUsersWithPaginationAndKeyword(int pageNumber, int pageSize,
+            List<String> sorts, String keyword) {
         log.info("Fetching users with pagination: pageNumber={}, pageSize={}", pageNumber, pageSize);
 
         List<String> whiteListFieldSorts = List.of("fullName", "email", "role", "status", "createdAt", "updatedAt");
         Page<User> userPage = userRepository.searchUsers(keyword.toLowerCase(),
-                AppUtils.generatePageableWithSort(sorts, whiteListFieldSorts, pageNumber, pageSize)
-        );
+                AppUtils.generatePageableWithSort(sorts, whiteListFieldSorts, pageNumber, pageSize));
 
         List<UserResponse> userResponses = userPage.getContent()
                 .stream()
@@ -162,7 +156,8 @@ public class UserServiceImpl implements UserService {
         User user = findUserById(id);
         if (!user.getEmail().equals(request.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
             log.error("Cannot update user ID {}. Email '{}' already exists", id, request.getEmail());
-            String message = messageSource.getMessage("user.email.exists.with.email", new Object[]{request.getEmail()}, LocaleContextHolder.getLocale());
+            String message = messageSource.getMessage("user.email.exists.with.email",
+                    new Object[] { request.getEmail() }, LocaleContextHolder.getLocale());
             throw new ResourceConflictException(message);
         }
 
@@ -171,7 +166,6 @@ public class UserServiceImpl implements UserService {
         user.setRole(role);
         user.setGender(Gender.getGenderFromName(request.getGender()));
         user.setStatus(Status.getStatusFromName(request.getStatus()));
-
 
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -226,7 +220,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public Boolean isNoPassword(String email) {
         if (!userRepository.existsByEmail(email)) {
-            String message = messageSource.getMessage("user.not.found.by.email", new Object[]{email}, LocaleContextHolder.getLocale());
+            String message = messageSource.getMessage("user.not.found.by.email", new Object[] { email },
+                    LocaleContextHolder.getLocale());
             throw new ResourceNotFoundException(message);
         }
         return userRepository.getStatusPassword(email);
@@ -255,7 +250,8 @@ public class UserServiceImpl implements UserService {
     public void verifyEmail(String token) {
         String email = jwtService.extractEmail(token, TokenType.CONFIRM_TOKEN);
         User user = findUserByEmail(email);
-        if (!user.getStatus().equals(Status.PENDING) || !jwtService.isTokenValid(token, user, TokenType.CONFIRM_TOKEN)) {
+        if (!user.getStatus().equals(Status.PENDING)
+                || !jwtService.isTokenValid(token, user, TokenType.CONFIRM_TOKEN)) {
             String message = messageSource.getMessage("user.verifyEmail.failed", null, LocaleContextHolder.getLocale());
             throw new ResourceConflictException(message);
         }
@@ -264,7 +260,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void createPassword(UserCreationPassword request) {
+    public void createPassword(UserCreationPasswordRequest request) {
         User user = findUserByEmail(request.getEmail());
         if (StringUtils.isBlank(user.getPassword()) && user.getNoPassword()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -280,9 +276,9 @@ public class UserServiceImpl implements UserService {
     public void resetPassword(String token, ResetPasswordRequest request) {
         String email = jwtService.extractEmail(token, TokenType.RESET_TOKEN);
         User user = findUserByEmail(email);
-        if (!jwtService.isTokenValid(token, user, TokenType.RESET_TOKEN) || !whitelistTokenService.existsByToken(token)) {
-            String message = messageSource.getMessage("auth.resetToken.invalid", null, LocaleContextHolder.getLocale());
-            throw new UnauthorizedException(message);
+        if (!jwtService.isTokenValid(token, user, TokenType.RESET_TOKEN)
+                || !whitelistTokenService.existsByToken(token)) {
+            throw new InvalidTokenException();
         }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         whitelistTokenService.deleteByToken(token);
@@ -299,14 +295,14 @@ public class UserServiceImpl implements UserService {
         log.info("User deleted successfully with ID: {}", id);
     }
 
-
     public User findUserByEmail(String email) {
         log.info("Looking up user by email {}", email);
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> {
                     log.error("User with email {} not found", email);
-                    String message = messageSource.getMessage("user.not.found.by.email", new Object[]{email}, LocaleContextHolder.getLocale());
+                    String message = messageSource.getMessage("user.not.found.by.email", new Object[] { email },
+                            LocaleContextHolder.getLocale());
                     return new ResourceNotFoundException(message);
                 });
     }
@@ -317,7 +313,8 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("User with ID {} not found", id);
-                    String message = messageSource.getMessage("user.not.found.by.id", new Object[]{id}, LocaleContextHolder.getLocale());
+                    String message = messageSource.getMessage("user.not.found.by.id", new Object[] { id },
+                            LocaleContextHolder.getLocale());
                     return new ResourceNotFoundException(message);
                 });
     }
