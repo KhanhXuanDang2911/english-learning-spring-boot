@@ -8,4 +8,5 @@ public interface AzureBlobService {
     boolean deleteFile(String fileName);
 
     String uploadBytes(byte[] data, String filename, String contentType);
+    String uploadVideo(MultipartFile file);
 }

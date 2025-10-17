@@ -23,6 +23,8 @@ public interface UserService {
     PageResponse<List<UserResponse>> getUsersWithPaginationAndKeyword(int pageNumber, int pageSize, List<String> sorts,
             String keyword);
 
+    List<UserResponse> getAllTeachers();
+
     UserResponse updateUser(Long id, MultipartFile avatar, AdminUserRequest request);
 
     UserResponse updateProfile(Long id, UserRequest request);

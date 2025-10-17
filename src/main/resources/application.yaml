@@ -2,9 +2,6 @@ server:
   port: 8080
   servlet:
     context-path: /e-learning
-    multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
 
 spring:
   servlet:
@@ -13,20 +10,6 @@ spring:
       max-request-size: 2000MB
   application:
     name: K-English
-  datasource:
-    url: jdbc:postgresql://localhost:5432/ELearning
-    username: postgres
-    password: 291104
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-    database: postgresql
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-  #    show-sql: true
   messages:
     basename: messages
     encoding: UTF-8

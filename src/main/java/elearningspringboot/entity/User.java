@@ -35,12 +35,16 @@ public class User extends BaseEntity implements UserDetails {
     private LocalDate birthDate;
     private Boolean noPassword;
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private Gender gender;
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
     @OneToMany(mappedBy = "author")
     private List<Post> posts;
+
+    @OneToMany(mappedBy = "teacher")
+    private List<Course> courses;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

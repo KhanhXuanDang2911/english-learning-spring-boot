@@ -150,6 +150,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<UserResponse> getAllTeachers() {
+        log.info("Fetching all teachers (no pagination)");
+        List<User> teachers = userRepository.findAllTeachers();
+        return teachers.stream().map(u -> {
+            UserResponse dto = userMapper.toDTO(u);
+            dto.setRole(u.getRole().getRole());
+            return dto;
+        }).toList();
+    }
+
+    @Override
     public UserResponse updateUser(Long id, MultipartFile avatar, AdminUserRequest request) {
         log.info("Updating user with ID: {}", id);
 

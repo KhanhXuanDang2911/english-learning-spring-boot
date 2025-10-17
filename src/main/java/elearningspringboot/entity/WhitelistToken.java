@@ -1,10 +1,7 @@
 package elearningspringboot.entity;
 
 import elearningspringboot.enumeration.TokenType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -24,6 +21,7 @@ public class WhitelistToken extends BaseEntity {
         private String email;
         @Column(unique = true, nullable = false)
         private String token;
+        @Enumerated(EnumType.STRING)
         private TokenType tokenType;
         private LocalDateTime expiredTime;
 }

@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/roles/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories-post/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories-course/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/courses/public", "/api/v1/courses/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/posts/public/**", "/api/v1/posts/{id}").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

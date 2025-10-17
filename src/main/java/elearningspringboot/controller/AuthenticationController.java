@@ -37,7 +37,7 @@ public class AuthenticationController {
     @PostMapping("/sign-in")
     public ResponseEntity<ResponseData<TokenResponse>> signIn(@Validated @RequestBody SignInRequest request) {
         TokenResponse response = authenticationService.signIn(request);
-        String message = messageSource.getMessage("auth.signin.success", null, LocaleContextHolder.getLocale());
+        String message = messageSource.getMessage("auth.sign.in.success", null, LocaleContextHolder.getLocale());
         return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
 
@@ -49,7 +49,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/sign-out")
-    public ResponseEntity<ResponseData<Void>> refreshToken(@RequestHeader("X-Token") String accessToken,
+    public ResponseEntity<ResponseData<Void>> signOut(@RequestHeader("X-Token") String accessToken,
             @RequestHeader("Y-Token") String refreshToken) {
         authenticationService.signOut(accessToken, refreshToken);
         String message = messageSource.getMessage("auth.logout.success", null, LocaleContextHolder.getLocale());

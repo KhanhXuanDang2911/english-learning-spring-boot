@@ -13,7 +13,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Slf4j
 @Service
@@ -105,4 +108,72 @@ public class AzureBlobServiceImpl implements AzureBlobService {
             throw new AppException(ErrorCode.UPLOAD_FILE_FAILED);
         }
     }
+
+    @Override
+    public String uploadVideo(MultipartFile file) {
+        String fileName = UUID.randomUUID() + "-" + file.getOriginalFilename();
+        log.info("Uploading (multi-thread) to Azure: {}", fileName);
+
+        BlockBlobClient blobClient = new BlobClientBuilder()
+                .connectionString(connectionString)
+                .containerName(containerName)
+                .blobName(fileName)
+                .buildClient()
+                .getBlockBlobClient();
+
+        final int CHUNK_SIZE = 8 * 1024 * 1024; 
+        int numThreads = 8;
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+
+        try (var inputStream = file.getInputStream()) {
+            byte[] buffer = new byte[CHUNK_SIZE];
+            int bytesRead;
+            int blockNum = 0;
+            List<String> blockIds = new ArrayList<>();
+            List<Future<?>> futures = new ArrayList<>();
+
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                byte[] chunkData = Arrays.copyOf(buffer, bytesRead);
+                String blockId = Base64.getEncoder()
+                        .encodeToString(String.format("%06d", blockNum++).getBytes());
+                blockIds.add(blockId);
+
+                futures.add(executor.submit(() -> {
+                    try (var chunkStream = new ByteArrayInputStream(chunkData)) {
+                        blobClient.stageBlock(blockId, chunkStream, chunkData.length);
+                        log.debug("Uploaded block {}", blockId);
+                    } catch (Exception e) {
+                        log.error("Block upload failed: {}", blockId, e);
+                        throw new RuntimeException(e);
+                    }
+                }));
+            }
+
+            for (Future<?> f : futures) {
+                f.get();
+            }
+
+            blobClient.commitBlockList(blockIds);
+
+            BlobHttpHeaders headers = new BlobHttpHeaders()
+                    .setContentType(file.getContentType() != null ? file.getContentType() : "video/mp4")
+                    .setCacheControl("public, max-age=31536000")
+                    .setContentDisposition("inline; filename=\"" + fileName + "\"");
+
+            blobClient.setHttpHeaders(headers);
+
+            executor.shutdown();
+
+            String url = blobClient.getBlobUrl();
+            log.info("Upload successful: {}", url);
+            return url;
+
+        } catch (Exception e) {
+            executor.shutdownNow();
+            log.error("Upload failed: {}", e.getMessage(), e);
+            throw new AppException(ErrorCode.UPLOAD_FILE_FAILED);
+        }
+    }
+
+
 }

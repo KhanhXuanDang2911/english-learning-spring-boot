@@ -87,10 +87,9 @@ public class PostController {
     }
 
     @PostMapping(value = "/me", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseData<PostResponse>> createMyPost(
             @Validated({ OnUserCreate.class, Default.class }) @RequestPart("post") PostRequest request,
-            @ValidImageFile @RequestPart("thumbnail") MultipartFile thumbnail) throws Exception {
+            @ValidImageFile(message = "{validation.image.file.invalid}") @RequestPart("thumbnail") MultipartFile thumbnail) throws Exception {
         log.info("Request: User create post = {}", request);
         request.setAuthorId(null);
         request.setStatus(null);
@@ -104,7 +103,7 @@ public class PostController {
     public ResponseEntity<ResponseData<PostResponse>> update(
             @PathVariable("id") @Min(value = 1, message = "{validation.id.min}") Long id,
             @Validated({ OnUpdate.class, Default.class }) @RequestPart("post") PostRequest request,
-            @ValidImageFile @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail)
+            @ValidImageFile(required = false, message = "{validation.image.file.invalid}") @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail)
             throws Exception {
         log.info("Request: Update post id = {}, data = {}", id, request);
         PostResponse dto = service.update(id, request, thumbnail);
@@ -113,11 +112,10 @@ public class PostController {
     }
 
     @PutMapping("/me/{id}")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseData<PostResponse>> updateMyPost(
             @PathVariable("id") @Min(value = 1, message = "{validation.id.min}") Long id,
             @Validated({ OnUserCreate.class, Default.class }) @RequestPart("post") PostRequest request,
-            @ValidImageFile @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail)
+            @ValidImageFile(required = false) @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail)
             throws Exception {
         log.info("Request: User update post id = {}, data = {}", id, request);
         request.setAuthorId(null);
