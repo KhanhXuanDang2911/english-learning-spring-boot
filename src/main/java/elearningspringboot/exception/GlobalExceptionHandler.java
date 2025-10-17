@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -75,6 +76,15 @@ public class GlobalExceptionHandler {
             WebRequest request) {
         String message = messageSource.getMessage("error.validation.params.missing",
                 new Object[] { e.getParameterName() },
+                LocaleContextHolder.getLocale());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request, null);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParams(MissingServletRequestPartException e,
+                                                             WebRequest request) {
+        String message = messageSource.getMessage("error.validation.params.missing",
+                new Object[] { e.getRequestPartName() },
                 LocaleContextHolder.getLocale());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request, null);
     }
@@ -156,14 +166,14 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, message, request, null);
     }
 
-    // @ExceptionHandler(Exception.class)
-    // public ResponseEntity<ErrorResponse> handleInternalError(Exception e,
-    // WebRequest request) {
-    // String message = messageSource.getMessage("error.internal.server", null,
-    // LocaleContextHolder.getLocale());
-    // return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, request,
-    // null);
-    // }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleInternalError(Exception e,
+            WebRequest request) {
+        String message = messageSource.getMessage("error.internal.server", null,
+                LocaleContextHolder.getLocale());
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, message, request,
+                null);
+    }
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ErrorResponse> handleAppError(AppException e, WebRequest request) {

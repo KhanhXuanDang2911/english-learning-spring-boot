@@ -1,12 +1,7 @@
 package elearningspringboot.entity;
 
 import elearningspringboot.enumeration.StatusPost;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,6 +29,7 @@ public class Post extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String contentText;
 
+    @Enumerated(EnumType.STRING)
     private StatusPost status;
 
     private String thumbnailUrl;

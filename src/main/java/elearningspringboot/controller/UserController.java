@@ -57,6 +57,15 @@ public class UserController {
         return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
 
+    @GetMapping("/teachers")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ResponseData<List<UserResponse>>> getAllTeachers() {
+        log.info("Request: Get all teachers (no pagination)");
+        List<UserResponse> response = userService.getAllTeachers();
+        String message = messageSource.getMessage("user.get.list.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.withData(HttpStatus.OK, message, response);
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseData<UserResponse>> getUserById(
@@ -71,7 +80,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseData<UserResponse>> createUser(
-            @ValidImageFile @RequestPart(value = "avatar", required = false) MultipartFile avatar,
+            @ValidImageFile(required = false, message = "{validation.image.file.invalid}") @RequestPart(value = "avatar", required = false) MultipartFile avatar,
             @RequestPart("user") @Validated({ OnCreate.class, Default.class }) AdminUserRequest request) {
         log.info("Request: Admin create user with data = {}", request);
         UserResponse response = userService.createUser(avatar, request);
@@ -84,7 +93,7 @@ public class UserController {
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseData<UserResponse>> updateUser(
             @PathVariable("id") @Min(value = 1, message = "Id must be greater than 0") Long id,
-            @ValidImageFile @RequestPart(value = "avatar", required = false) MultipartFile avatar,
+            @ValidImageFile(required = false, message = "{validation.image.file.invalid}") @RequestPart(value = "avatar", required = false) MultipartFile avatar,
             @RequestPart("user") @Validated({ OnUpdate.class, Default.class }) AdminUserRequest request) {
         log.info("Request: Update user with ID = {}, data = {}", id, request);
         UserResponse response = userService.updateUser(id, avatar, request);

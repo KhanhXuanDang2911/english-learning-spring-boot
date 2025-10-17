@@ -18,7 +18,7 @@ import java.util.Date;
 @Transactional
 public class WhiteListTokenServiceImpl implements WhitelistTokenService {
 
-    private final WhitelistTokenRepository blacklistTokenRepository;
+    private final WhitelistTokenRepository whitelistTokenRepository;
     private final JwtService jwtService;
 
     @Override
@@ -28,22 +28,22 @@ public class WhiteListTokenServiceImpl implements WhitelistTokenService {
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
 
-        WhitelistToken blacklistToken = WhitelistToken.builder()
+        WhitelistToken whitelistToken = WhitelistToken.builder()
                 .token(token)
                 .email(email)
                 .expiredTime(localDateTime)
                 .tokenType(tokenType)
                 .build();
-        blacklistTokenRepository.save(blacklistToken);
+        whitelistTokenRepository.save(whitelistToken);
     }
 
     @Override
     public void deleteByToken(String token) {
-        blacklistTokenRepository.deleteByToken(token);
+        whitelistTokenRepository.deleteByToken(token);
     }
 
     public boolean existsByToken(String token) {
-        return blacklistTokenRepository.existsByToken(token);
+        return whitelistTokenRepository.existsByToken(token);
     }
 
 }

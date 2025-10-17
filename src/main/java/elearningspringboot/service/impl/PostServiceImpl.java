@@ -57,12 +57,10 @@ public class PostServiceImpl implements PostService {
         entity.setCategory(category);
         User author;
         if (AppUtils.hasRole(auth, "ADMIN") && request.getAuthorId() != null) {
-            // Admin có thể chỉ định author
             author = userRepository.findById(request.getAuthorId())
                     .orElseThrow(() -> new ResourceNotFoundException(messageSource.getMessage("user.not.found.by.id",
                             new Object[] { request.getAuthorId() }, LocaleContextHolder.getLocale())));
         } else {
-            // User thường hoặc Admin không chỉ định author -> lấy từ security context
             Long id = AppUtils.getUserIdFromSecurityContext();
             author = userRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException(messageSource.getMessage("user.not.found.by.id",
