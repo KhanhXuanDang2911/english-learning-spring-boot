@@ -1,17 +1,16 @@
 package elearningspringboot.service.impl;
 
 import elearningspringboot.dto.request.CourseRequest;
-import elearningspringboot.dto.response.CourseResponse;
-import elearningspringboot.dto.response.PageResponse;
-import elearningspringboot.dto.response.UserSummaryResponse;
+import elearningspringboot.dto.response.*;
 import elearningspringboot.entity.CategoryCourse;
 import elearningspringboot.entity.Course;
 import elearningspringboot.entity.Lesson;
 import elearningspringboot.entity.User;
 import elearningspringboot.enumeration.StatusCourse;
-import elearningspringboot.enumeration.UserRole;
 import elearningspringboot.exception.ResourceNotFoundException;
+import elearningspringboot.mapper.ChapterMapper;
 import elearningspringboot.mapper.CourseMapper;
+import elearningspringboot.mapper.LessonMapper;
 import elearningspringboot.repository.CategoryCourseRepository;
 import elearningspringboot.repository.CourseRepository;
 import elearningspringboot.repository.UserRepository;
@@ -42,6 +41,8 @@ public class CourseServiceImpl implements CourseService {
     private final CourseMapper mapper;
     private final AzureBlobService azureBlobService;
     private final MessageSource messageSource;
+    private final ChapterMapper chapterMapper;
+    private final LessonMapper lessonMapper;
 
     @Override
     @Transactional
@@ -115,7 +116,7 @@ public class CourseServiceImpl implements CourseService {
         repository.delete(entity);
     }
 
-    @PostAuthorize("returnObject.status == T(elearningspringboot.enumeration.StatusCourse).PUBLIC or hasRole('ADMIN') or (hasRole('TEACHER') and returnObject.teacher.id == authentication.principal.id)")
+    @PostAuthorize("hasRole('ADMIN') or (hasRole('TEACHER') and returnObject.teacher.id == authentication.principal.id)")
     @Override
     public CourseResponse getById(Long id) {
         Course entity = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException(
@@ -126,6 +127,41 @@ public class CourseServiceImpl implements CourseService {
                 .avatarUrl(entity.getTeacher().getAvatarUrl())
                 .role(entity.getTeacher().getRole().getRole().getName())
                 .build());
+        res.setNumberOfLessons(getNumberOfLessons(entity));
+        return res;
+    }
+
+    @PostAuthorize("returnObject.status == T(elearningspringboot.enumeration.StatusCourse).PUBLIC or hasRole('ADMIN') or (hasRole('TEACHER') and returnObject.teacher.id == authentication.principal.id)")
+    @Override
+    public CourseResponse getDetailsCourseById (Long id) {
+        Course entity = repository.findByIdWithChaptersAndLessons(id).orElseThrow(() -> new ResourceNotFoundException(
+                messageSource.getMessage("course.notFound", null, LocaleContextHolder.getLocale())));
+        CourseResponse res = mapper.toDTO(entity);
+        res.setTeacher(UserSummaryResponse.builder()
+                .id(entity.getTeacher().getId()).fullName(entity.getTeacher().getFullName())
+                .avatarUrl(entity.getTeacher().getAvatarUrl())
+                .role(entity.getTeacher().getRole().getRole().getName())
+                .build());
+        List<ChapterResponse> chaptersDetails = entity.getChapters().stream().map(chapter -> {
+            ChapterResponse chapterResponse = chapterMapper.toDTO(chapter);
+            chapterResponse.setNumberOfLessons(chapter.getLessons().size());
+            chapterResponse.setDuration(
+                    chapter.getLessons().stream()
+                            .mapToInt(Lesson::getDuration)
+                            .sum()
+            );
+            chapterResponse.setLessonsDetails(chapter.getLessons().stream().map(lesson -> {;
+                LessonResponse lessonResponse = lessonMapper.toDTO(lesson);
+                if (!lessonResponse.getIsPreview()) {
+                    lessonResponse.setVideoUrl(null);
+                    lessonResponse.setAttachmentUrl(null);
+                }
+                return lessonResponse;
+            }).collect(Collectors.toList()));
+            return chapterResponse;
+        }).toList();
+        res.setChaptersDetails(chaptersDetails);
+        res.setNumberOfLessons(getNumberOfLessons(entity));
         return res;
     }
 
@@ -175,5 +211,11 @@ public class CourseServiceImpl implements CourseService {
                     .mapToInt(c -> c.getLessons().stream().mapToInt(Lesson::getDuration).sum()).sum());
             return res;
         }).toList();
+    }
+
+    private Integer getNumberOfLessons(Course course) {
+        return course.getChapters().stream()
+                .mapToInt(chapter -> chapter.getLessons().size())
+                .sum();
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CourseRepository extends JpaRepository<Course, Long> {
@@ -25,6 +26,10 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
                         @Param("status") StatusCourse status,
                         Pageable pageable);
 
-        // New: fetch newest courses by status with limit via Pageable
+        @Query("select distinct c from Course c " +
+                        "left join fetch c.chapters ch " +
+                        "where c.id = :id")
+        Optional<Course> findByIdWithChaptersAndLessons(Long id);
+
         List<Course> findByStatusOrderByCreatedAtDesc(StatusCourse status, Pageable pageable);
 }

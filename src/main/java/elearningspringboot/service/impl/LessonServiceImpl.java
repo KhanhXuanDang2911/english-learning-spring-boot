@@ -52,6 +52,8 @@ public class LessonServiceImpl implements LessonService {
         if (video != null && !video.isEmpty()) {
             String videoUrl = azureBlobService.uploadVideo(video);
             entity.setVideoUrl(videoUrl);
+        } else {
+            entity.setIsPreview(false);
         }
         HtmlImageProcessor processor = new HtmlImageProcessor(azureBlobService);
         if (request.getDescription() != null) {

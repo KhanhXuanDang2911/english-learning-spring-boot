@@ -4,6 +4,8 @@ import elearningspringboot.enumeration.StatusCourse;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,4 +18,5 @@ public class ChapterResponse extends BaseResponse {
     private StatusCourse status;
     private Integer numberOfLessons;
     private Integer duration;
+    private List<LessonResponse> lessonsDetails;
 }

@@ -78,13 +78,22 @@ public class CourseController {
         return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
 
+    @GetMapping("/public/details/{courseId}")
+    public ResponseEntity<ResponseData<CourseResponse>> getDetailsCourse(@PathVariable @Min(value = 1, message = "{validation.id.min}") Long courseId) {
+        log.info("Request: Get courses details with id = {} ", courseId);
+        CourseResponse response = service.getDetailsCourseById(courseId);
+        String message = messageSource.getMessage("course.get.success", null, LocaleContextHolder.getLocale());
+        return ResponseBuilder.withData(HttpStatus.OK, message, response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or hasRole('TEACHER')")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseData<CourseResponse>> getById(
             @PathVariable("id") @Min(value = 1, message = "{validation.id.min}") Long id) {
         log.info("Request: Get course id={}", id);
-        CourseResponse dto = service.getById(id);
+        CourseResponse response = service.getById(id);
         String message = messageSource.getMessage("course.get.success", null, LocaleContextHolder.getLocale());
-        return ResponseBuilder.withData(HttpStatus.OK, message, dto);
+        return ResponseBuilder.withData(HttpStatus.OK, message, response);
     }
 
     @PostMapping

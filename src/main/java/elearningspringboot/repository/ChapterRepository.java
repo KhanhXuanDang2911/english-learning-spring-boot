@@ -13,7 +13,7 @@ import java.util.List;
 @Repository
 public interface ChapterRepository extends JpaRepository<Chapter, Long> {
 
-    @Query("select c from Chapter c join fetch c.lessons where :courseId is null or c.course.id = :courseId order by c.orderIndex asc")
+    @Query("select c from Chapter c left join fetch c.lessons where :courseId is null or c.course.id = :courseId order by c.orderIndex asc")
     List<Chapter> searchByCourseId(@Param("courseId") Long courseId);
 
     @Query("select coalesce(max(c.orderIndex), 0) from Chapter c where c.course.id = :courseId")

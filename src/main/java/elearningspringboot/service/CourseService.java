@@ -17,6 +17,8 @@ public interface CourseService {
 
     CourseResponse getById(Long id);
 
+    CourseResponse getDetailsCourseById(Long id);
+
     PageResponse<List<CourseResponse>> getAllWithPagination(int pageNumber, int pageSize, List<String> sorts,
             String keyword, Long categoryId, Long teacherId, StatusCourse status);
 

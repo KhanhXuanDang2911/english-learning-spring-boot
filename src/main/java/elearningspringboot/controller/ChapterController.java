@@ -3,11 +3,8 @@ package elearningspringboot.controller;
 import elearningspringboot.dto.request.ChangeOrderRequest;
 import elearningspringboot.dto.request.ChapterRequest;
 import elearningspringboot.dto.response.ChapterResponse;
-import elearningspringboot.dto.response.PageResponse;
 import elearningspringboot.dto.response.ResponseData;
-import elearningspringboot.enumeration.UserRole;
 import elearningspringboot.service.ChapterService;
-import elearningspringboot.util.AppUtils;
 import elearningspringboot.util.ResponseBuilder;
 import elearningspringboot.validation.OnCreate;
 import elearningspringboot.validation.OnUpdate;
@@ -20,8 +17,6 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,7 +37,7 @@ public class ChapterController {
     public ResponseEntity<ResponseData<List<ChapterResponse>>> getChaptersByCourseId(
             @PathVariable("id") @Min(value = 1, message = "{validation.id.min}") Long courseId) {
         log.info("Request: Get chapter by course id={}", courseId);
-        List<ChapterResponse>  dto = service.getChaptersByCourseId(courseId);
+        List<ChapterResponse> dto = service.getChaptersByCourseId(courseId);
         String message = messageSource.getMessage("chapter.get.list.success", null, LocaleContextHolder.getLocale());
         return ResponseBuilder.withData(HttpStatus.OK, message, dto);
     }
@@ -73,8 +68,9 @@ public class ChapterController {
             @PathVariable("courseId") @Min(value = 1, message = "{validation.id.min}") Long id,
             @RequestBody List<ChangeOrderRequest> request) {
         log.info("Request: Update order chapter with course id ={}", id);
-         service.updateOrder(id, request);
-        String message = messageSource.getMessage("chapter.update.order.success", null, LocaleContextHolder.getLocale());
+        service.updateOrder(id, request);
+        String message = messageSource.getMessage("chapter.update.order.success", null,
+                LocaleContextHolder.getLocale());
         return ResponseBuilder.noData(HttpStatus.OK, message);
     }
 
